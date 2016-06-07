@@ -1,6 +1,12 @@
 library(lubridate)
 library(zoo)
 library(dplyr)
+library(xts)
+library(ggplot2)
+library(dplyr)
+
+setwd("~/DM-Project")
+dataset_polimi <- read.csv("~/DM-Project/Original data/dataset_polimi.csv", stringsAsFactors=FALSE)
 
 # Estrai il giorno nel mese
 dataset_polimi$Giorno_Mese <- day(dataset_polimi$Data)
@@ -57,3 +63,7 @@ for (i in 1:nrow(dataset_polimi)){
   temp <- filter(dataset_polimi, Categoria_prodotto==myProdotto, Key==myKey, Anno==myAnno, Giorno_Anno<=myGiorno_Anno)
   dataset_polimi[i,]$sp_anno <- sum(as.numeric(temp$Vendite))
 }
+
+sample_set <- dataset_polimi[sample(1:nrow(dataset_polimi), 1000), ]
+write.csv(sample_set, file="Modified data/sample_set_polimi.csv")
+write.csv(dataset_polimi, file="Modified data/dataset_polimi.csv")
