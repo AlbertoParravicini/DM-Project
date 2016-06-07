@@ -9,8 +9,8 @@ library(nnet) # For binarization
 library(zoo) # For time series
 
 # Import data
-#setwd("C:/Users/Storna/Desktop/dm_proj/workspace")
-#dataset_polimi <- read.csv("dataset_polimi.csv", stringsAsFactors=FALSE)
+setwd("C:/Users/Storna/Desktop/dm_proj/workspace")
+dataset_polimi <- read.csv("dataset_polimi.csv", stringsAsFactors=FALSE)
 
 
 # Extract number from string
@@ -26,18 +26,19 @@ dataset_polimi <- dataset_polimi[order(dataset_polimi$N_Zona, dataset_polimi$N_A
 
 # Extract information from Data field
 dataset_polimi$Giorno_Mese <- day(dataset_polimi$Data)
-dataset_polimi$Giorno_Settimana <- wday(dataset_polimi$Data)
+dataset_polimi$Giorno_Settimana <- ifelse(wday(dataset_polimi$Data) > 1, wday(dataset_polimi$Data) - 1, 7)
 dataset_polimi$Giorno_Anno <- yday(dataset_polimi$Data)
 dataset_polimi$Mese <- month(dataset_polimi$Data)
 dataset_polimi$Settimana_Anno <- week(dataset_polimi$Data)
 dataset_polimi$Anno <- year(dataset_polimi$Data)
+dataset_polimi$Weekend <- ifelse(dataset_polimi$Giorno_Settimana > 5, 1, 0)
 
 
 # Extract seasons from Data field
 dataset_polimi$Stagione_Mese <- ifelse(dataset_polimi$Mese <= 2 | dataset_polimi$Mese >= 12, 'inverno',
                                 ifelse(3 <= dataset_polimi$Mese & dataset_polimi$Mese <= 5, 'primavera',
                                        ifelse(6 <= dataset_polimi$Mese & dataset_polimi$Mese <= 8, 'estate',
-                                              ifelse(9 <= dataset_polimi$Mese & dataset_polimi$Mese <= 11, 'autunno',''))))
+                                              ifelse(9 <= dataset_polimi$Mese & dataset_polimi$Mese <= 11, 'autunno','?'))))
 
 # Assegna una chiave in base a zona, area e sottoarea
 dataset_polimi$Key <- paste(dataset_polimi$Zona, paste(dataset_polimi$Area, dataset_polimi$Sottoarea, sep="-"), sep="-")
