@@ -9,8 +9,8 @@ library(nnet) # For binarization
 library(zoo) # For time series
 
 # Import data
-#setwd("C:/Users/Storna/Desktop/dm_proj/workspace")
-#dataset_polimi <- read.csv("dataset_polimi.csv", stringsAsFactors=FALSE)
+
+dataset_polimi <- read.csv("Original data/dataset_polimi.csv", stringsAsFactors=FALSE)
 
 
 # Extract number from string
@@ -42,6 +42,7 @@ dataset_polimi$Stagione_Mese <- ifelse(dataset_polimi$Mese <= 2 | dataset_polimi
 
 # Assegna una chiave in base a zona, area e sottoarea
 dataset_polimi$Key <- paste(dataset_polimi$Zona, paste(dataset_polimi$Area, dataset_polimi$Sottoarea, sep="-"), sep="-")
+
 
 
 # Nota: la settiman è calcolata a partire dal primo gennaio, senza guardare che giorno sia (e.g. settimana inizia dal giovedi per il 2014)
@@ -133,6 +134,7 @@ for(i in 1:n){
 
 
 #                              Somma parziale nel mese
+
 # dataset_polimi$sp_mese<-0
 # for (i in 1:nrow(dataset_polimi)){
 #   myProdotto <- dataset_polimi[i,]$Categoria_prodotto
