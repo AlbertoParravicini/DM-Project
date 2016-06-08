@@ -4,6 +4,8 @@ library(dplyr)
 library(tseries)
 library(PerformanceAnalytics)
 library(forecast)
+library(astsa)
+library(Metrics)
 
 
 # DATA IMPORT AND CLEANING
@@ -73,19 +75,60 @@ pp.test(des_p1)
 tsdisplay(dep_p1)
 tsdisplay(des_p1)
 
-# What is th order of the ARIMA? 
+# What is the order of the ARIMA? 
 # The weekly seasonality can be modeled as part of the ARIMA: (1 + a*z^-1)(1 + b*z^-7)*y(t) = w(t)
 # It is also possible to operate directly on the non depolarized signal!
-fit <- Arima(p1_ts, c(1, 0, 1), seasonal = list(order = c(1, 0, 1), period = 7), include.mean = T)
+fit <- Arima(p1_ts, c(1, 0, 2), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T)
 
 pred <- forecast(fit, 50)
 plot(pred)
-lin <- reg$coefficients[1] + reg$coefficients[2]*seq(from = start(pred$mean)[1], length.out = 50)
-tot_pred <- pred$mean + lin
 
-# plot the results
-plot(p1_ts, type="l")
-lines(tot_pred, col="red")
+fit
 
+# Can we still fit something over the residuals?
+res <- residuals(fit)
+tsdisplay(residuals(fit))
+
+auto.arima(res, stepwise = F)
+
+# Probably not, even though...
+
+# # Trying out the astsa package
+# 
+# acf2(p1_ts, 100)
+# acf2(diff(p1_ts, 1), 100)
+# 
+# fit <- sarima(p1_ts, 1,0,2,1,1,1,7)
+# pred <- sarima.for(p1_ts, 50, 1,0,2,1,1,1,7)
+# 
+# # Not bad at all!
+
+# How good is this model? let's use a validation set!
+
+p1_train <- p1_ts[1:(0.9*length(p1_ts))]
+p1_test <- p1_ts[(length(p1_train)+ 1):length(p1_ts)]
+
+fit <- Arima(p1_train, c(1, 0, 2), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T, include.drift = T)
+
+pred <- forecast(fit, length(p1_test))
+plot(pred)
+lines(p1_test, col="red")
+
+# Effective sse of the prediction
+(1/length(p1_test))*sum((coredata(p1_test) - pred$mean)^2)
+
+# Let's try again with the requested 10 days prediction
+
+p1_train <- p1_ts[1:(length(p1_ts)-10)]
+p1_test <- p1_ts[length(p1_train)+ 1:10]
+
+# Use sarima as it easier to plot, the model is pretty much the same as Arima
+fit <- sarima(p1_train, 1,0,2,1,1,1,7)
+pred <- sarima.for(p1_train, length(p1_test), 1,0,2,1,1,1,7)
+lines(p1_test, col="green")
+points(p1_test, col="green")
+
+# Effective sse of the prediction
+(1/length(p1_test))*sum((coredata(p1_test) - pred$mean)^2)
 
 
