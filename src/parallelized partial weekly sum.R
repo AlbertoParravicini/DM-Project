@@ -1,30 +1,33 @@
 library(doParallel)
 registerDoParallel()
 
-
+n <- nrow(dataset_polimi)
 i<-0
 
 calculate_sp_sett <- function(i) {
   
-  # print(i*100/n)
   myProdotto <- dataset_polimi[i,]$Categoria_prodotto
   myKey <- dataset_polimi[i,]$Key
   myGiorno_Anno <- dataset_polimi[i,]$Giorno_Anno
   mySettimana <- dataset_polimi[i,]$Settimana_Anno
   myAnno <- dataset_polimi[i,]$Anno
   
-  temp <- 0
-  if (i==1){
-    temp <- dataset_polimi[1, ]$Vendite
+  for (j in 0:i){
+    if(i-j==0){break} # stop if beginning of dataset reached
+    if(dataset_polimi[i-j,]$Categoria_prodotto != myProdotto 
+       || dataset_polimi[i-j,]$Key != myKey
+       || dataset_polimi[i-j,]$Giorno_Anno > myGiorno_Anno
+       || dataset_polimi[i-j,]$Settimana_Anno != mySettimana
+       || dataset_polimi[i-j,]$Anno != myAnno) {break} # stop if reached a "wrong" j
   }
-  else
-  {
-    if(dataset_polimi[i-1,]$Settimana_Anno != mySettimana){
-      temp <- dataset_polimi[i, ]$Vendite
+  temp <- 0
+  if(j!=0){
+    for (k in (i-j+1):i){
+      # partial sum
+      temp <- temp + dataset_polimi[k, ]$Vendite
     }
-    else {
-      temp <- (dataset_polimi[i, ]$Vendite + dataset_polimi[(i-1),]$sp_sett)
-    }
+  } else {
+    temp <- temp + dataset_polimi[0, ]$Vendite
   }
   
   return(temp)
