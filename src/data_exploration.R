@@ -38,6 +38,36 @@ summary(dataset)
 # ------------------------------------------------------
 # ------------------------------------------------------
 
+# Plot sales for each day of the week
+daily <- aggregate(cbind(vendite) ~ giorno_settimana , data = dataset, FUN = sum)
+barplot(daily$vendite)
+# Can we do better?
+p0 <- ggplot(dataset, aes(giorno_settimana, vendite)) + geom_boxplot()
+p0
+# Sales on monday seems to be lower than the other days, but there are many high outliers.
+# Remove the outliers
+# compute lower and upper whiskers
+ylim1 = boxplot.stats(dataset$vendite)$stats[c(1, 5)]
+# scale y limits based on ylim1
+p1 <- p0 + coord_cartesian(ylim = ylim1*1.05)
+p1
+# As expected, not many sales in weekends. The sales during the week are more or less constant
+
+# Plot sales for each month
+daily <- aggregate(cbind(vendite) ~ mese , data = dataset, FUN = sum)
+barplot(daily$vendite)
+# Can we do better?
+p0 <- ggplot(dataset, aes(mese, vendite)) + geom_boxplot()
+p0
+# TODO: Comment
+# Remove the outliers
+# compute lower and upper whiskers
+ylim1 = boxplot.stats(dataset$vendite)$stats[c(1, 5)]
+# scale y limits based on ylim1
+p1 <- p0 + coord_cartesian(ylim = ylim1*1.05)
+p1
+# TODO: Comment
+
 
 # Create historical series of product 1 in zone 1.
 data_p1 <- filter(dataset, prod == 1, zona == 1) 
@@ -78,6 +108,8 @@ tsdisplay(des_p1)
 # What is the order of the ARIMA? 
 # The weekly seasonality can be modeled as part of the ARIMA: (1 + a*z^-1)(1 + b*z^-7)*y(t) = w(t)
 # It is also possible to operate directly on the non depolarized signal!
+# Using (1,1,2,1,1,1) gives worse results, but a better prediction on the validation set below: 
+# this should be checked
 fit <- Arima(p1_ts, c(1, 0, 2), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T)
 
 pred <- forecast(fit, 50)
@@ -91,7 +123,7 @@ tsdisplay(residuals(fit))
 
 auto.arima(res, stepwise = F)
 
-# Probably not, even though...
+# Probably not, even though there is still a small spike on 7
 
 # # Trying out the astsa package
 # 
@@ -99,7 +131,7 @@ auto.arima(res, stepwise = F)
 # acf2(diff(p1_ts, 1), 100)
 # 
 # fit <- sarima(p1_ts, 1,0,2,1,1,1,7)
-# pred <- sarima.for(p1_ts, 50, 1,0,2,1,1,1,7)
+# pred <- sarima.for(p1_ts, 50, 1,1,2,1,1,1,7)
 # 
 # # Not bad at all!
 
@@ -123,12 +155,12 @@ p1_train <- p1_ts[1:(length(p1_ts)-10)]
 p1_test <- p1_ts[length(p1_train)+ 1:10]
 
 # Use sarima as it easier to plot, the model is pretty much the same as Arima
-fit <- sarima(p1_train, 1,0,2,1,1,1,7)
+fit <- sarima(p1_train, 1,0,2,1,1,1,7, details = F)
 pred <- sarima.for(p1_train, length(p1_test), 1,0,2,1,1,1,7)
 lines(p1_test, col="green")
 points(p1_test, col="green")
 
 # Effective sse of the prediction
-(1/length(p1_test))*sum((coredata(p1_test) - pred$mean)^2)
+(1/length(p1_test))*sum((coredata(p1_test) - pred$pred)^2)
 
 
