@@ -139,16 +139,20 @@ points(p1_test, col="green")
 # Effective sse of the prediction
 (1/length(p1_test))*sum((coredata(p1_test) - pred$pred)^2)
 
+# PART 2: modelling the dynamic of the residuals
 
 # Try to fit the model by keeping into account the dynamic of the residuals
 fit <- Arima(p1_train, c(1, 0, 2), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T)
 pred <- forecast(fit, length(p1_test))
 res <- residuals(fit)
-# Fit the residuals with a purely seasonal ARMA
+tsdisplay(res)
+# Fit the residuals with a purely seasonal ARMA, of lag 6
 fitres <- Arima(res, c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 6, include.mean = T))
+tsdisplay(residuals(fitres))
 predres <- forecast(fitres, length(p1_test))
-
+# Fit the residuals of the residuals with another purely seasonal ARMA, of lag 5
 fitres2 <- Arima(residuals(fitres), c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 5, include.mean = T))
+tsdisplay(residuals(fitres2))
 predres2 <- forecast(residuals(fitres), length(p1_test))
 # Put together the previous predictions
 pred_tot <- pred$mean + predres$mean + predres2$mean
@@ -161,6 +165,10 @@ points(pred_tot, col="red")
 
 # Effective sse of the prediction
 (1/length(p1_test))*sum((coredata(p1_test) - pred_tot)^2)
+
+
+
+
 
 # ---------------------------------------
 # Use Random forest
