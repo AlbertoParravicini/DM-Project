@@ -1,1 +1,2 @@
 * aggiungi "è il primo del mese"
+* eseguire gli script parallelizzati e salvarli (circa 30 min)
