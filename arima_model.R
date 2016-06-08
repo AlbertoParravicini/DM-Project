@@ -6,6 +6,9 @@ library(PerformanceAnalytics)
 library(forecast)
 library(astsa)
 library(Metrics)
+library(xgboost)
+library(ranger)
+library(ggthemes) # visualization
 
 
 # DATA IMPORT AND CLEANING
@@ -42,7 +45,7 @@ summary(dataset)
 data_p1 <- filter(dataset, prod == 1, zona == 1) 
 data_p1 <- data_p1[, c("data", "vendite")]
 data_p1$vendite <-data_p1$vendite
-data_p1 <- aggregate(cbind(vendite) ~ data , data = data_p1, FUN = sum)
+data_p1 <- aggregate(cbind(vendite) ~ data , data = data_p1, FUN = mean)
 
 data_p1$data <- as.Date(as.character(data_p1$data),format="%Y-%m-%d")
 
@@ -124,8 +127,8 @@ lines(p1_test, col="red")
 
 # Let's try again with the requested 10 days prediction
 
-p1_train <- p1_ts[1:(length(p1_ts)-40)]
-p1_test <- p1_ts[length(p1_train)+ 1:40]
+p1_train <- p1_ts[1:(length(p1_ts)-50)]
+p1_test <- p1_ts[length(p1_train)+ 1:50]
 
 # Use sarima as it easier to plot, the model is pretty much the same as Arima
 fit <- sarima(p1_train, 1,0,2,1,1,1,7, details = F)
@@ -147,8 +150,7 @@ predres <- forecast(fitres, length(p1_test))
 
 fitres2 <- Arima(residuals(fitres), c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 5, include.mean = T))
 predres2 <- forecast(residuals(fitres), length(p1_test))
-
-
+# Put together the previous predictions
 pred_tot <- pred$mean + predres$mean + predres2$mean
 
 plot(p1_train[(length(p1_train)-50):length(p1_train)], type="l", xlim=c(end(p1_train)-50, end(p1_train)+50))
@@ -159,3 +161,46 @@ points(pred_tot, col="red")
 
 # Effective sse of the prediction
 (1/length(p1_test))*sum((coredata(p1_test) - pred_tot)^2)
+
+# ---------------------------------------
+# Use Random forest
+# ---------------------------------------
+data_p1 <- filter(dataset, prod == 1, zona == 1) 
+
+data_p1$data <- as.Date(as.character(data_p1$data),format="%Y-%m-%d")
+
+data_train <- data_p1[1:(nrow(data_p1)-50), ]
+data_test <- data_p1[nrow(data_train) +1:50, ]
+forest_reg <- ranger(data_train,
+                     formula=vendite ~ giorno_settimana + giorno_mese + giorno_anno + mese + weekend + stagione,
+                     num.trees = 400, importance="impurity", write.forest = T)
+
+#Get importance of forest_reg
+importance_ranger <- importance(forest_reg)
+
+# Use ggplot2 to visualize the relative importance of variables
+
+importance_df <- data.frame(name = names(importance_ranger), importance_ranger)
+ggplot(importance_df, aes(x = reorder(name, importance_ranger), 
+                          y = importance_ranger)) +
+  geom_bar(stat='identity', colour = 'black') +
+  labs(x = 'Variables', title = 'Relative Variable Importance') +
+  coord_flip() + 
+  theme_few()
+
+forest_pred <- predict(forest_reg, data_test)
+
+plot(data_train$vendite[(nrow(data_train)-50):nrow(data_train)], type="l", xlim=c(0,100))
+
+plot.ts(as.ts(forest_pred$predictions, order.by = index(forest_pred$predictions)), col="red", ylim=c(0, 12))
+lines(as.ts(data_test$vendite, order.by = index(data_test$vendite)), col="green")
+points(data_test$vendite, col="green")
+points(forest_pred$predictions, col="red")
+lines(coredata(pred_tot), col="blue")
+points(coredata(pred_tot), col="blue")
+
+# Effective sse of the prediction
+(1/length(p1_test))*sum((coredata(p1_test) - pred_tot)^2)
+(1/nrow(data_test))*sum((forest_pred$predictions - data_test$vendite)^2)
+
+

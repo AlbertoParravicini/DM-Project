@@ -42,7 +42,7 @@ summary(dataset)
 daily <- aggregate(cbind(vendite) ~ giorno_settimana , data = dataset, FUN = sum)
 barplot(daily$vendite)
 # Can we do better?
-p0 <- ggplot(dataset, aes(giorno_settimana, vendite)) + geom_boxplot()
+p0 <- ggplot(dataset, aes(giorno_settimana, vendite)) + geom_boxplot() + facet_grid(. ~ prod)
 p0
 # Sales on monday seems to be lower than the other days, but there are many high outliers.
 # Remove the outliers
@@ -59,26 +59,32 @@ barplot(daily$vendite)
 # Can we do better?
 p0 <- ggplot(dataset, aes(mese, vendite)) + geom_boxplot()
 p0
-# TODO: Comment
+# There are fewer slase in august, but not by a wide margin
+# The higher sales in february might be linked to the smaller number of days
+# There  are a lot of outliers in june!
+
 # Remove the outliers
 # compute lower and upper whiskers
 ylim1 = boxplot.stats(dataset$vendite)$stats[c(1, 5)]
 # scale y limits based on ylim1
 p1 <- p0 + coord_cartesian(ylim = ylim1*1.05)
 p1
-# TODO: Comment
 
 # Plot sales for each day of the month
 daily <- aggregate(cbind(vendite) ~ giorno_mese , data = dataset, FUN = sum)
 barplot(daily$vendite)
 # Can we do better?
-p0 <- ggplot(dataset, aes(giorno_mese, vendite)) + geom_boxplot()
+p0 <- ggplot(dataset, aes(giorno_mese, vendite)) + geom_boxplot() + facet_grid(. ~ prod)
 p0
-# TODO: Comment
 # Remove the outliers
 # compute lower and upper whiskers
 ylim1 = boxplot.stats(dataset$vendite)$stats[c(1, 5)]
 # scale y limits based on ylim1
 p1 <- p0 + coord_cartesian(ylim = ylim1*1.05)
 p1
-# TODO: Comments
+# Fewer sales on the first of the month! why?
+# maybe the considered years had a lot of sundays on the first?
+for (i in 1:7) {
+  cat(nrow(filter(dataset, giorno_settimana == i, giorno_mese == 1, sottoarea=="5")), ", ")
+}
+# Not by a wide margin, but their number is still above average
