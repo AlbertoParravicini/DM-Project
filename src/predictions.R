@@ -203,4 +203,32 @@ points(coredata(pred_tot), col="blue")
 (1/length(p1_test))*sum((coredata(p1_test) - pred_tot)^2)
 (1/nrow(data_test))*sum((forest_pred$predictions - data_test$vendite)^2)
 
+# ---------------------------------------
+# Use XGBoost
+# ---------------------------------------
+xg_train <- xgb.DMatrix(model.matrix(~giorno_settimana + giorno_mese + giorno_anno + mese + weekend + stagione, data=data_train),
+            label=data_train$vendite, missing=NA)
+xg_test <- xgb.DMatrix(model.matrix(~giorno_settimana + giorno_mese + giorno_anno + mese + weekend + stagione, data=data_test),
+                        label=data_test$vendite, missing=NA)
+
+xgb_model <- xgboost(xg_train, data_train$vendite, nrounds=45)
+xgb_pred <- predict(xgb_model, xg_test)
+
+plot(data_train$vendite[(nrow(data_train)-50):nrow(data_train)], type="l", xlim=c(0,100))
+
+plot.ts(as.ts(xgb_pred, order.by = index(xgb_pred)), col="red", ylim=c(0, 12))
+lines(as.ts(data_test$vendite, order.by = index(data_test$vendite)), col="black")
+points(data_test$vendite, col="black")
+points(xgb_pred, col="red")
+lines(coredata(pred_tot), col="blue")
+points(coredata(pred_tot), col="blue")
+lines(as.ts(forest_pred$prediction, order.by = index(forest_pred$prediction)), col="green")
+points(forest_pred$predictions, col="green")
+
+# Effective sse of the prediction
+(1/length(p1_test))*sum((coredata(p1_test) - pred_tot)^2)
+(1/nrow(data_test))*sum((forest_pred$predictions - data_test$vendite)^2)
+(1/nrow(data_test))*sum((xgb_pred - data_test$vendite)^2)
+
+
 
