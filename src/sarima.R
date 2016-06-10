@@ -83,7 +83,7 @@ sarima_prediction <- function(data_train, data_test, num_prod = 1, num_zona = 0,
   # ----- Use a SARIMA(1,1,2,1,1,1,7) ------------
   
   # Try to fit the model by keeping into account the dynamic of the residuals, and predict over the test_set
-  fit <- Arima(ts_train, c(1, 1, 2), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T)
+  fit <- Arima(ts_train, c(2, 0, 2), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T)
   res <- residuals(fit)
   pred <- forecast(fit, length(ts_test))
   
@@ -120,18 +120,16 @@ sarima_prediction <- function(data_train, data_test, num_prod = 1, num_zona = 0,
   # Plot the results
   
   if (details) {
-    train_table <- data.frame(vendite=coredata(ts_train), data=index(ts_train))
-    test_table <- data.frame(vendite=coredata(ts_test), data=index(ts_test))
-    pred_table <- data.frame(vendite=pred_tot, data=index(ts_test))
+    train_table <- data.frame(vendite=coredata(ts_train), data=index(ts_train), type = "train")
+    test_table <- data.frame(vendite=coredata(ts_test), data=index(ts_test), type = "test")
+    pred_table <- data.frame(vendite=pred_tot, data=index(ts_test), type = "pred")
+    
+    table_tot <- rbind(train_table, test_table, pred_table)
 
-    p <- ggplot(train_table, aes(x=data, y=vendite)) + 
+    p <- ggplot(table_tot, aes(x=data, y=vendite, color = type)) + 
       coord_cartesian(xlim = c(end(ts_train)-test_length, end(ts_train)+test_length))
-    p <- p + geom_line(size = 1) + geom_point(size = 2)
-    p <- p + geom_line(data = test_table, aes(x=data, y=vendite), color = "#4f72fc", size = 1) + 
-      geom_point(data = test_table, aes(x=data, y=vendite),color = "#4f72fc", size = 2)
-    p <- p + geom_line(data = pred_table, aes(x=data, y=vendite), color = "#ff4d4d", size = 1) + 
-      geom_point(data = pred_table, aes(x=data, y=vendite), color = "#ff4d4d", size = 2)
-    p <- p + theme_economist_white() +xlab("Data") + ylab("Numero di vendite")
+    p <- p + geom_line(size = 1) + geom_point(size = 2) + scale_colour_colorblind()
+    p <- p + theme_economist() +xlab("Data") + ylab("Numero di vendite") 
     print(p)
     
     # Effective sse of the prediction
