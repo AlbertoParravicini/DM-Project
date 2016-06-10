@@ -9,6 +9,12 @@ library(Metrics)
 library(xgboost)
 library(ranger)
 library(ggthemes) # visualization
+library(normwhn.test)
+library(nortest)
+library(nortestARMA)
+
+prediction_length = 10
+
 
 
 # DATA IMPORT AND CLEANING
@@ -37,20 +43,21 @@ factorVars <- c('zona','area', "sottoarea",
 dataset[factorVars] <- lapply(dataset[factorVars], function(x) as.factor(x))
 
 summary(dataset)
+s_area = sample(unique(dataset$sottoarea), 1)
+data_p1 <- filter(dataset, prod == 1, sottoarea == s_area)
 
 # ------------------------------------------------------
 # ------------------------------------------------------
 
 # Create historical series of product 1 in zone 1.
-data_p1 <- filter(dataset, prod == 1, zona == 1) 
-data_p1 <- data_p1[, c("data", "vendite")]
-data_p1$vendite <-data_p1$vendite
-data_p1 <- aggregate(cbind(vendite) ~ data , data = data_p1, FUN = mean)
+filtered_data_p1 <- data_p1[, c("data", "vendite")]
+filtered_data_p1$vendite <-filtered_data_p1$vendite
+filtered_data_p1 <- aggregate(cbind(vendite) ~ data , data = filtered_data_p1, FUN = mean)
 
-data_p1$data <- as.Date(as.character(data_p1$data),format="%Y-%m-%d")
+filtered_data_p1$data <- as.Date(as.character(filtered_data_p1$data),format="%Y-%m-%d")
 
 # create a timeseries object
-p1_ts <- zoo(data_p1$vendite, order.by = data_p1$data)
+p1_ts <- zoo(filtered_data_p1$vendite, order.by = filtered_data_p1$data)
 
 # Quickly inspect the series
 plot(p1_ts)
@@ -101,6 +108,10 @@ tsdisplay(residuals(fitres))
 fitres2 <- Arima(residuals(fitres), c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 5, include.mean = T))
 tsdisplay(residuals(fitres2))
 
+
+
+
+
 # # Trying out the astsa package
 # 
 # acf2(p1_ts, 100)
@@ -127,8 +138,8 @@ lines(p1_test, col="red")
 
 # Let's try again with the requested 10 days prediction
 
-p1_train <- p1_ts[1:(length(p1_ts)-50)]
-p1_test <- p1_ts[length(p1_train)+ 1:50]
+p1_train <- p1_ts[1:(length(p1_ts)-prediction_length)]
+p1_test <- p1_ts[length(p1_train)+ 1:prediction_length]
 
 # Use sarima as it easier to plot, the model is pretty much the same as Arima
 fit <- sarima(p1_train, 1,0,2,1,1,1,7, details = F)
@@ -140,24 +151,31 @@ points(p1_test, col="green")
 (1/length(p1_test))*sum((coredata(p1_test) - pred$pred)^2)
 
 # PART 2: modelling the dynamic of the residuals
+# Use a SARIMA(1,1,2,1,1,1,7)
 
 # Try to fit the model by keeping into account the dynamic of the residuals
-fit <- Arima(p1_train, c(1, 0, 2), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T)
-pred <- forecast(fit, length(p1_test))
+fit <- Arima(p1_train, c(1, 1, 2), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T)
+fit
 res <- residuals(fit)
 tsdisplay(res)
+pred <- forecast(fit, length(p1_test))
 # Fit the residuals with a purely seasonal ARMA, of lag 6
 fitres <- Arima(res, c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 6, include.mean = T))
-tsdisplay(residuals(fitres))
+fitres
+res2 <- residuals(fitres)
+tsdisplay(res2)
 predres <- forecast(fitres, length(p1_test))
 # Fit the residuals of the residuals with another purely seasonal ARMA, of lag 5
-fitres2 <- Arima(residuals(fitres), c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 5, include.mean = T))
-tsdisplay(residuals(fitres2))
-predres2 <- forecast(residuals(fitres), length(p1_test))
+fitres2 <- Arima(res2, c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 5, include.mean = T))
+fitres2
+res3 <- residuals(fitres2)
+tsdisplay(res3, lag.max = 600)
+predres2 <- forecast(fitres2, length(p1_test))
+
 # Put together the previous predictions
 pred_tot <- pred$mean + predres$mean + predres2$mean
 
-plot(p1_train[(length(p1_train)-50):length(p1_train)], type="l", xlim=c(end(p1_train)-50, end(p1_train)+50))
+plot(p1_train[(length(p1_train)-prediction_length):length(p1_train)], type="l", xlim=c(end(p1_train)-50, end(p1_train)+50))
 lines(p1_test, col="green")
 lines(pred_tot, col="red")
 points(p1_test, col="green")
@@ -166,19 +184,13 @@ points(pred_tot, col="red")
 # Effective sse of the prediction
 (1/length(p1_test))*sum((coredata(p1_test) - pred_tot)^2)
 
-
-
-
-
 # ---------------------------------------
 # Use Random forest
 # ---------------------------------------
-data_p1 <- filter(dataset, prod == 1, zona == 1) 
-
 data_p1$data <- as.Date(as.character(data_p1$data),format="%Y-%m-%d")
 
-data_train <- data_p1[1:(nrow(data_p1)-50), ]
-data_test <- data_p1[nrow(data_train) +1:50, ]
+data_train <- data_p1[1:(nrow(data_p1)-prediction_length), ]
+data_test <- data_p1[nrow(data_train) +1:prediction_length, ]
 forest_reg <- ranger(data_train,
                      formula=vendite ~ giorno_settimana + giorno_mese + giorno_anno + mese + weekend + stagione,
                      num.trees = 400, importance="impurity", write.forest = T)
@@ -198,7 +210,7 @@ ggplot(importance_df, aes(x = reorder(name, importance_ranger),
 
 forest_pred <- predict(forest_reg, data_test)
 
-plot(data_train$vendite[(nrow(data_train)-50):nrow(data_train)], type="l", xlim=c(0,100))
+plot(data_train$vendite[(nrow(data_train)-prediction_length):nrow(data_train)], type="l", xlim=c(0,100))
 
 plot.ts(as.ts(forest_pred$predictions, order.by = index(forest_pred$predictions)), col="red", ylim=c(0, 12))
 lines(as.ts(data_test$vendite, order.by = index(data_test$vendite)), col="green")
@@ -219,10 +231,10 @@ xg_train <- xgb.DMatrix(model.matrix(~giorno_settimana + giorno_mese + giorno_an
 xg_test <- xgb.DMatrix(model.matrix(~giorno_settimana + giorno_mese + giorno_anno + mese + weekend + stagione, data=data_test),
                         label=data_test$vendite, missing=NA)
 
-xgb_model <- xgboost(xg_train, data_train$vendite, nrounds=45)
+xgb_model <- xgboost(xg_train, data_train$vendite, nrounds = 45)
 xgb_pred <- predict(xgb_model, xg_test)
 
-plot(data_train$vendite[(nrow(data_train)-50):nrow(data_train)], type="l", xlim=c(0,100))
+plot(data_train$vendite[(nrow(data_train)-prediction_length):nrow(data_train)], type="l", xlim=c(0,100))
 
 plot.ts(as.ts(xgb_pred, order.by = index(xgb_pred)), col="red", ylim=c(0, 12))
 lines(as.ts(data_test$vendite, order.by = index(data_test$vendite)), col="black")
@@ -234,9 +246,17 @@ lines(as.ts(forest_pred$prediction, order.by = index(forest_pred$prediction)), c
 points(forest_pred$predictions, col="green")
 
 # Effective sse of the prediction
+cat("sottoarea: ", s_area, "\n")
 (1/length(p1_test))*sum((coredata(p1_test) - pred_tot)^2)
 (1/nrow(data_test))*sum((forest_pred$predictions - data_test$vendite)^2)
 (1/nrow(data_test))*sum((xgb_pred - data_test$vendite)^2)
+
+
+
+train <- filter(dataset, data <= max(data) - prediction_length)
+test <- filter(dataset, data > max(data) - prediction_length)
+
+
 
 
 

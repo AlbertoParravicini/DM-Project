@@ -1,2 +1,4 @@
 * aggiungi "è il primo del mese"
 * eseguire gli script parallelizzati e salvarli (circa 30 min)
+
+* L'area 4-20 ha tutti i valori di vendita a zero, a parte pochissimi 1: va eliminata?

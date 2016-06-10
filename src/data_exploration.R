@@ -88,3 +88,4 @@ for (i in 1:7) {
   cat(nrow(filter(dataset, giorno_settimana == i, giorno_mese == 1, sottoarea=="5")), ", ")
 }
 # Not by a wide margin, but their number is still above average
+
