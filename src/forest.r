@@ -2,8 +2,12 @@ library(dplyr)
 library(ranger)
 library(ggplot2)
 library(ggthemes)
+library(zoo)
+library(xgboost)
 
-dataset_polimi <- read.csv("~/DM-Project/Modified data/dataset_polimi.csv", stringsAsFactors=FALSE, row.names=NULL)
+dataset_polimi <- read.csv("~/DM-Project/Modified data/dataset_polimi_final.csv", stringsAsFactors=FALSE, row.names=NULL)
+
+dataset_polimi <- dataset_polimi_final_vendite_giorn
 
 data_train <- filter(dataset_polimi, anno < 2016 | giorno_anno <= 130)
 
@@ -19,7 +23,7 @@ if (class(dataset_polimi$vendite) == "factor") {
 
 # Turn some features to factors
 factorVars <- c('zona','area', "sottoarea",
-                'prod','giorno_mese', "giorno_settimana", "giorno_anno", "mese", "settimana_anno", "anno", "weekend","stagione", "key")
+                'prod','giorno_mese', "giorno_settimana", "giorno_anno", "mese", "settimana_anno", "anno", "weekend","stagione", "key", "primo_del_mese", "azienda_chiusa")
 
 dataset_polimi[factorVars] <- lapply(dataset_polimi[factorVars], function(x) as.factor(x))
 
@@ -34,7 +38,7 @@ rfs_test <- filter(dataset_polimi, as.numeric(as.character(anno))==2016 & as.num
 rfs <- function(n){
 
   rfs_model <- ranger(rfs_train,
-                       formula=vendite ~ key+ zona + area + sottoarea  + prod + giorno_settimana + giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend + stagione,
+                       formula=vendite ~ key+ zona + area + sottoarea  + prod + giorno_settimana + giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend + stagione + primo_del_mese + azienda_chiusa,
                        num.trees = n, importance="impurity", write.forest = T)
   
   # plot importance
@@ -55,13 +59,16 @@ rfs <- function(n){
   return(rfs_predict)
 
 }
-n<- 200
+n<- 400
 rfs_prediction <- rfs(n)
 
 # get sse
 
 rfs_sse <- (1/nrow(rfs_test))*sum((rfs_test$vendite - rfs_prediction$predictions)^2)
 print(rfs_sse)
+# requires "scoring functions.R"
+maxape(data_test$vendite, rfs_prediction$predictions)
+meanape(data_test$vendite, rfs_prediction$predictions)
 
 # ============ Random Forest: Multiple models for different sottoareas ==============
 
@@ -73,7 +80,7 @@ rfm <- function(k,n){
   rfm_test <- filter(dataset_polimi, as.numeric(as.character(anno))==2016 & as.numeric(as.character(giorno_anno)) >130, key==k)
   
   rfm_model <- ranger(rfm_train,
-                      formula=vendite ~ prod + giorno_settimana + giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend + stagione,
+                      formula=vendite ~ prod + giorno_settimana + giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend + stagione + primo_del_mese + azienda_chiusa,
                       num.trees = n, importance="impurity", write.forest = T)
   
   # plot importance
@@ -97,7 +104,7 @@ rfm <- function(k,n){
   
   return(rfm_predict)
 }
-n<- 200
+n<- 400
 rfm_prediction_global <- vector(mode="numeric", length=0)
 for(i in unique(dataset_polimi$key)){
   temp <- rfm(i,n)
@@ -107,7 +114,9 @@ for(i in unique(dataset_polimi$key)){
 rfm_sse <- (1/nrow(data_test))*sum((data_test$vendite - rfm_prediction_global)^2)
 
 print(rfm_sse)
-
+# requires "scoring functions.R"
+maxape(data_test$vendite, rfm_prediction_global)
+meanape(data_test$vendite, rfm_prediction_global)
 # ======= EXTRA
 
 # k is the key of an subarea
@@ -117,8 +126,11 @@ key_analysis <- function(k, p){
   temp_data <- cbind(data_test, p)
   names(temp_data)[names(temp_data) == 'p'] <- 'pred'
   temp_data <- filter(temp_data, key==k)
-  plot.ts(as.ts(temp_data$pred, order.by = index(temp_data$pred)), col="red", ylim=c(0, 12))
-  lines(as.ts(temp_data$vendite, order.by = index(temp_data$vendite)), col="green")
+  for(p in unique(temp_data$prod)){
+    temp_data_p <- filter(temp_data, prod==p)
+    plot.ts(as.ts(temp_data_p$pred, order.by = index(temp_data_p$pred)), col="red", ylim=c(0, 12), main=paste("Chiave", as.character(k), "Prodotto", as.character(p)))
+    lines(as.ts(temp_data_p$vendite, order.by = index(temp_data_p$vendite)), col="green")
+  }
   temp_sse <- (1/nrow(temp_data))*sum((coredata(temp_data$vendite) - temp_data$pred)^2)
   return(temp_sse)
 }
@@ -133,4 +145,7 @@ sse_vector_rfm <- vector(mode="numeric", length=0)
 for (k in unique(data_test$key)){
   sse_vector_rfm <- c(sse_vector_rfm, key_analysis(k, rfm_prediction_global))
 }
+
+
+
 
