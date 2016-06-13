@@ -39,5 +39,5 @@ ggplot(vendite_giornaliere_tot, aes(x = data, y = vendite_giorn_tot)) +
 
 
 write.csv(vendite_giornaliere, file="Modified data/vendite_giornaliere_prod.csv", row.names = F)
-write.csv(vendite_giornaliere, file="Modified data/vendite_giornaliere_tot.csv", row.names = F)
-write.csv(vendite_giornaliere, file="Modified data/dataset_polimi_final_vendite_giorn.csv", row.names = F)
+write.csv(vendite_giornaliere_tot, file="Modified data/vendite_giornaliere_tot.csv", row.names = F)
+write.csv(dataset, file="Modified data/dataset_polimi_final_vendite_giorn.csv", row.names = F)
