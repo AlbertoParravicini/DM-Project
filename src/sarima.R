@@ -17,12 +17,12 @@ library(nortestARMA)
 # "num_zona", "num_area", "num_sottoarea" are optional, but one of them must be specified.
 # If more than one is specified, the highest in the hierarchy is considered.
 
-sarima_prediction <- function(data_train, data_test, num_prod = 1, num_zona = 0, num_area = 0, num_sottoarea = 0, details = T) {
+sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0, num_prod = 1, num_zona = 0, num_area = 0, num_sottoarea = 0, details = T) {
   if (nrow(data_train)==0) {
     stop("data_train is empty!")
   }
-  if (nrow(data_test) == 0) {
-    stop("data_test is empty!")
+  if (all(is.na(data_test)) && prediction_length == 0) {
+    stop("prediction length = 0 and data_test is empty!")
   }
   
   dataset <- rbind(data_train, data_test)
@@ -60,7 +60,10 @@ sarima_prediction <- function(data_train, data_test, num_prod = 1, num_zona = 0,
   # Length of the training set time series
   train_length <- length(unique(data_train$data))
   # Length of the test set time series
-  test_length <- length(unique(data_test$data))
+  
+  if (all(!is.na(data_test))) {
+    prediction_length <- length(unique(data_test$data))
+  }
   
   # Create historical series of product 1 in zone 1.
   filtered_data_p1 <- data_p1[, c("data", "vendite")]
@@ -75,7 +78,9 @@ sarima_prediction <- function(data_train, data_test, num_prod = 1, num_zona = 0,
   
   # Split the full timeseries in two
   ts_train <- ts_full[1:train_length]
-  ts_test <- ts_full[(train_length+1):(test_length+train_length)]
+  ts_test <- ts_full[(train_length+1):(prediction_length+train_length)]
+  
+
   
   
   # ---------------------------------------------
@@ -85,7 +90,8 @@ sarima_prediction <- function(data_train, data_test, num_prod = 1, num_zona = 0,
   # Try to fit the model by keeping into account the dynamic of the residuals, and predict over the test_set
   fit <- Arima(ts_train, c(2, 0, 2), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T)
   res <- residuals(fit)
-  pred <- forecast(fit, length(ts_test))
+  pred <- forecast(fit, prediction_length)
+  
   
   if (details) {
     print(fit)
@@ -95,7 +101,8 @@ sarima_prediction <- function(data_train, data_test, num_prod = 1, num_zona = 0,
   # Fit the residuals with a purely seasonal ARMA, of lag 6, and predict over the test_set
   fitres <- Arima(res, c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 6, include.mean = T))
   res2 <- residuals(fitres)
-  predres <- forecast(fitres, length(ts_test))
+  predres <- forecast(fitres, prediction_length)
+  
   
   if (details) {
     print(fitres)
@@ -105,7 +112,9 @@ sarima_prediction <- function(data_train, data_test, num_prod = 1, num_zona = 0,
   # Fit the residuals of the residuals with another purely seasonal ARMA, of lag 5, and predict over the test_set
   fitres2 <- Arima(res2, c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 5, include.mean = T))
   res3 <- residuals(fitres2)
-  predres2 <- forecast(fitres2, length(ts_test))
+  predres2 <- forecast(fitres2, prediction_length)
+  
+  
   
   if (details) {
     print(fitres2)
@@ -115,19 +124,23 @@ sarima_prediction <- function(data_train, data_test, num_prod = 1, num_zona = 0,
   # Put together the previous predictions
   pred_tot <- pred$mean + predres$mean + predres2$mean
   
-  sse <- (1/length(ts_test))*sum((coredata(ts_test) - pred_tot)^2)
+  if (all(!is.na(data_test))) {
+    sse <- (1/prediction_length)*sum((coredata(ts_test) - pred_tot)^2)
+  }
+
+    
   
   # Plot the results
   
   if (details) {
     train_table <- data.frame(vendite=coredata(ts_train), data=index(ts_train), type = "train")
-    test_table <- data.frame(vendite=coredata(ts_test), data=index(ts_test), type = "test")
-    pred_table <- data.frame(vendite=pred_tot, data=index(ts_test), type = "pred")
+    test_table <- data.frame(vendite=coredata(ts_test), data=seq.Date(from=max(train$data)+1, length.out = prediction_length, by = 1), type = "test")
+    pred_table <- data.frame(vendite=pred_tot, data=seq.Date(from=max(train$data)+1, length.out = prediction_length, by = 1), type = "pred")
     
     table_tot <- rbind(train_table, test_table, pred_table)
 
     p <- ggplot(table_tot, aes(x=data, y=vendite, color = type)) + 
-      coord_cartesian(xlim = c(end(ts_train)-test_length, end(ts_train)+test_length))
+      coord_cartesian(xlim = c(end(ts_train)-prediction_length, end(ts_train)+prediction_length))
     p <- p + geom_line(size = 1) + geom_point(size = 2) + scale_colour_colorblind()
     p <- p + theme_economist() +xlab("Data") + ylab("Numero di vendite") 
     print(p)
@@ -147,7 +160,9 @@ sarima_prediction <- function(data_train, data_test, num_prod = 1, num_zona = 0,
       stop("Invalid filtering!")
     }
     cat("PREDICTION ON ", pred_on, " OVER ", length(ts_test), " DAYS\n")
-    cat("Sum of square errors: ", sse, "\n")
+    if (all(!is.na(data_test))) {
+      cat("Sum of square errors: ", sse, "\n")
+    }
   }
 
   return(pred_tot)
