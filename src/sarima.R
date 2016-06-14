@@ -17,6 +17,9 @@ library(nortestARMA)
 # "num_zona", "num_area", "num_sottoarea" are optional, but one of them must be specified.
 # If more than one is specified, the highest in the hierarchy is considered.
 
+setClass(Class = "sarima_pred_res", representation(prediction = "ts", sse = "numeric"))
+setClass(Class = "full_sarima_pred_res", representation(predictions = "data.frame", sse_list = "numeric"))
+
 sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0, num_prod = 1, num_zona = 0, num_area = 0, num_sottoarea = 0, details = T) {
   if (nrow(data_train)==0) {
     stop("data_train is empty!")
@@ -45,13 +48,13 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   
   # Filter the dataset depending on the requested prediction!
   if (num_zona != 0) {
-    data_p1 <- filter(dataset, prod == num_prod, zona == num_zona)
+    filtered_data <- filter(dataset, prod == num_prod, zona == num_zona)
   }
   else if (num_area != 0) {
-    data_p1 <- filter(dataset, prod == num_prod, area == num_area)
+    filtered_data <- filter(dataset, prod == num_prod, area == num_area)
   }
   else if (num_sottoarea != 0) {
-    data_p1 <- filter(dataset, prod == num_prod, sottoarea == num_sottoarea)
+    filtered_data <- filter(dataset, prod == num_prod, sottoarea == num_sottoarea)
   }
   else {
     stop("Invalid filtering!")
@@ -65,22 +68,21 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
     prediction_length <- length(unique(data_test$data))
   }
   
-  # Create historical series of product 1 in zone 1.
-  filtered_data_p1 <- data_p1[, c("data", "vendite")]
-  filtered_data_p1$vendite <-filtered_data_p1$vendite
   # When predicting on a zone or area, predict the sum of sales of individual subzones.
-  filtered_data_p1 <- aggregate(cbind(vendite) ~ data , data = filtered_data_p1, FUN = sum)
-  
-  filtered_data_p1$data <- as.Date(as.character(filtered_data_p1$data),format="%Y-%m-%d")
+  filtered_data <- aggregate(cbind(vendite, sp_settimana, sp_mese, sp_anno) ~ data , data = filtered_data, FUN = sum)
+  filtered_data$data <- as.Date(as.character(filtered_data$data),format="%Y-%m-%d")
   
   # Create a timeseries object
-  ts_full <- zoo(filtered_data_p1$vendite, order.by = filtered_data_p1$data)
+  ts_full <- zoo(filtered_data$vendite, order.by = filtered_data$data)
   
   # Split the full timeseries in two
   ts_train <- ts_full[1:train_length]
   ts_test <- ts_full[(train_length+1):(prediction_length+train_length)]
   
-
+  # Use external inputs as regressors.
+  # Found to be not useful.
+  #train_regressors <- matrix(c(filtered_data$sp_settimana[1:train_length], filtered_data$sp_mese[1:train_length], filtered_data$sp_anno[1:train_length]), ncol = 3)
+  #test_regressors <- matrix(c(filtered_data$sp_settimana[(train_length+1):(prediction_length+train_length)], filtered_data$sp_mese[(train_length+1):(prediction_length+train_length)], filtered_data$sp_anno[(train_length+1):(prediction_length+train_length)]), ncol = 3)
   
   
   # ---------------------------------------------
@@ -110,7 +112,7 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   }
   
   # Fit the residuals of the residuals with another purely seasonal ARMA, of lag 5, and predict over the test_set
-  fitres2 <- Arima(res2, c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 5, include.mean = T))
+  fitres2 <- Arima(res2, c(0, 0, 0), seasonal = list(order = c(1, 1, 0), period = 5, include.mean = T))
   res3 <- residuals(fitres2)
   predres2 <- forecast(fitres2, prediction_length)
   
@@ -124,6 +126,7 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   # Put together the previous predictions
   pred_tot <- pred$mean + predres$mean + predres2$mean
   
+  sse <- -1
   if (all(!is.na(data_test))) {
     sse <- (1/prediction_length)*sum((coredata(ts_test) - pred_tot)^2)
   }
@@ -165,5 +168,34 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
     }
   }
 
-  return(pred_tot)
+  return(new("sarima_pred_res", prediction=pred_tot, sse=sse))
+}
+
+full_sarima_prediction <- function(train, test = NA, prediction_length = 0, details = F) {
+  
+  sse_list <- c()
+  result_list <- data.frame(matrix(NA, nrow = 0, ncol = 12))
+  
+  #unique(dataset$sottoarea)
+  for (prod_i in 1:2) {
+    for (sottoarea_i in sort(sample(unique(dataset$sottoarea), 3))) {
+      if (all(!is.na(test))) {
+        res_temp <- sarima_prediction(train, test, num_prod = prod_i, num_sottoarea = sottoarea_i, details = details)
+      }
+      else {
+        res_temp <- sarima_prediction(train, prediction_length = prediction_length, num_prod = prod_i, num_sottoarea = sottoarea_i, details = details)
+      }
+      sse_list <- c(sse_list, attr(res_temp, "sse"))
+      cat("\nNUMERO PRODOTTO: ", prod_i, "\n")
+      cat("NUMERO SOTTOAREA: ", sottoarea_i, "\n")
+      cat("PREDIZIONI: \n")
+      cat(coredata(attr(res_temp, "prediction")), "\n")
+      result_list <- rbind(result_list, c(prod_i, sottoarea_i, coredata(attr(res_temp, "prediction"))))
+      cat("SSE: ", attr(res_temp, "sse"), "\n")
+    }
+  }
+  
+  cat("\nSSE MEDIO: ", mean(sse_list), "\n")
+  
+  return(new("full_sarima_pred_res", predictions = result_list, sse_list = sse_list))
 }

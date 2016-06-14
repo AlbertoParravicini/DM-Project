@@ -22,7 +22,7 @@ prediction_length = 50
 # ------------------------------------------------------
 
 setwd("~/DM-Project")
-dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi.csv", stringsAsFactors=FALSE, row.names=NULL)
+dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_final.csv", stringsAsFactors=FALSE, row.names=NULL)
 # Remove the x column, if present
 dataset <- dataset[ , !(names(dataset) %in% c("X"))]
 
@@ -255,6 +255,9 @@ cat("sottoarea: ", s_area, "\n")
 
 train <- filter(dataset, data <= max(data) - prediction_length)
 test <- filter(dataset, data > max(data) - prediction_length)
+
+
+
 
 
 
