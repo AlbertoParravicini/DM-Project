@@ -38,7 +38,7 @@ if (class(dataset$vendite) == "factor") {
 
 # Turn some features to factors
 factorVars <- c('zona','area', "sottoarea",
-                'prod','giorno_mese', "giorno_settimana", "giorno_anno", "mese", "settimana_anno", "anno", "weekend","stagione", "key", "azienda_chiusa")
+                'prod','giorno_mese', "giorno_settimana", "giorno_anno", "mese", "settimana_anno", "anno", "weekend","stagione", "key", "azienda_chiusa", "primo_del_mese")
 
 dataset[factorVars] <- lapply(dataset[factorVars], function(x) as.factor(x))
 
