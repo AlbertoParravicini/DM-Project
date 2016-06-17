@@ -84,3 +84,7 @@ prediction_prod <- function(num_prod) {
 
 predset_1 <- prediction_prod(1)
 predset_2 <- prediction_prod(2)
+predset <- rbind(predset_1, predset_2)
+predset
+
+write.csv(predset, file="Modified data/predizione_aziendale.csv", row.names = F)
