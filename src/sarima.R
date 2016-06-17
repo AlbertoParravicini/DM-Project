@@ -59,7 +59,12 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   else {
     stop("Invalid filtering!")
   }
+  data_train$data <- as.Date(as.character(data_train$data),format="%Y-%m-%d")
+  if (all(!is.na(data_test))) {
+    data_test$data <- as.Date(as.character(data_test$data),format="%Y-%m-%d")
+  }
   
+    
   # Length of the training set time series
   train_length <- length(unique(data_train$data))
   # Length of the test set time series
@@ -138,8 +143,8 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   
   if (details) {
     train_table <- data.frame(vendite=coredata(ts_train), data=index(ts_train), type = "train")
-    test_table <- data.frame(vendite=coredata(ts_test), data=seq.Date(from=max(train$data)+1, length.out = prediction_length, by = 1), type = "test")
-    pred_table <- data.frame(vendite=pred_tot, data=seq.Date(from=max(train$data)+1, length.out = prediction_length, by = 1), type = "pred")
+    test_table <- data.frame(vendite=coredata(ts_test), data=seq.Date(from=max(data_train$data)+1, length.out = prediction_length, by = 1), type = "test")
+    pred_table <- data.frame(vendite=pred_tot, data=seq.Date(from=max(data_train$data)+1, length.out = prediction_length, by = 1), type = "pred")
     
     table_tot <- rbind(train_table, test_table, pred_table)
 
@@ -178,7 +183,7 @@ full_sarima_prediction <- function(train, test = NA, prediction_length = 0, deta
   result_list <- data.frame(matrix(NA, nrow = 0, ncol = 12))
   
   for (prod_i in 1:2) {
-    for (sottoarea_i in 1:3) {
+    for (sottoarea_i in sort(unique(train$sottoarea))) {
       if (all(!is.na(test))) {
         res_temp <- sarima_prediction(train, test, num_prod = prod_i, num_sottoarea = sottoarea_i, details = details, ...)
       }
