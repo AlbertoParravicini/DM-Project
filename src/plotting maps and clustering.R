@@ -79,23 +79,32 @@ lines(x,plot_wss, col="red")
 
 set.seed(1234)
 
-k <- 6 #num of clusters
+temp_dataset <- dataset_polimi_complete
 
-cluster <- kmeans(dataset_polimi_complete[,c("latitudine", "longitudine")], center=k)
-temp_dataset <- cbind(dataset_polimi_complete, cluster$cluster)
-
+k <- c(3,6,20) #num of clusters
+for(i in k){
+  cluster <- kmeans(dataset_polimi_complete[,c("latitudine", "longitudine")], center=k)
+  temp_dataset <- cbind(temp_dataset, cluster$cluster)
+}
 library(dplyr)
 library(rworldmap)
 
-names(temp_dataset)[names(temp_dataset) == 'cluster$cluster'] <- 'cluster'
+names(temp_dataset)[names(temp_dataset) == 'cluster$cluster'] <- 'cluster20'
 
 map <- getMap(resolution = "low")
 plot(map, xlim = c(-10, 30), ylim = c(40, 50), asp = 1)
 
-for (i in seq(1:k)){
-  for (s in unique(filter(temp_dataset, cluster==i)$sottoarea)){
-    # print(s)
-    temp <- filter(temp_dataset, sottoarea==s)
-    points(temp$longitudine[1], temp$latitudine[1], col=i, asp=1)
-  }
-}
+
+# need to change "cluster" to "clusterK" where k is the number of clusters
+# for (i in seq(1:k)){
+#   for (s in unique(filter(temp_dataset, cluster==i)$sottoarea)){
+#     # print(s)
+#     temp <- filter(temp_dataset, sottoarea==s)
+#     points(temp$longitudine[1], temp$latitudine[1], col=i, asp=1)
+#   }
+# }
+
+
+#======= SAVE STUFF ========================
+write.csv(temp_dataset, file="Modified data/dataset_polimi_clusterized.csv", row.names = FALSE)
+
