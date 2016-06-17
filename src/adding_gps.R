@@ -12,9 +12,13 @@ names(gps)[names(gps) == 'LONGITUDINE'] <- 'longitudine'
 names(gps)[names(gps) == 'LATITUDINE'] <- 'latitudine'
 
 
+if (class(gps$sottoarea)=="factor"){
+  gps$sottoarea <- as.numeric(levels(gps$sottoarea))[gps$sottoarea]
+}
 
-dataset <- left_join(dataset_polimi, gps)
 
-write.csv(dataset_polimi, file="Modified data/dataset_polimi_complete.csv", row.names = FALSE)
+dataset <- left_join(dataset_polimi_complete, gps)
+
+write.csv(dataset, file="Modified data/dataset_polimi_complete.csv", row.names = FALSE)
 
 
