@@ -260,6 +260,9 @@ test <- filter(dataset, data > max(data) - prediction_length)
 
 
 
+mape <- function(real, pred) {
+  abs((real-pred)/mean(real))/length(real)
+}
 
 
 
