@@ -46,6 +46,8 @@ dataset$data <- as.Date(as.character(dataset$data),format="%Y-%m-%d")
 vendite_giornaliere_prod$data <- as.Date(as.character(vendite_giornaliere_prod$data),format="%Y-%m-%d")
 
 total_table <- merge(dataset, vendite_giornaliere_prod, by = c("prod", "data"), all.x = T)
+# Rename "vendite_giorn_prod.y" to "vendite_giorn_prod"
+names(total_table)[names(total_table) == 'vendite_giorn_prod.y'] <- 'vendite_giorn_prod'
 View(total_table)
 
 write.csv(total_table, file="Modified data/dataset_polimi_cluster_tot_pred.csv", row.names = FALSE)
