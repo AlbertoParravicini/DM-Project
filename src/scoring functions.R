@@ -1,3 +1,4 @@
+library(dplyr)
 
 # mean squared errors (MSE)
 mse <- function(real, forecast){
@@ -5,7 +6,7 @@ mse <- function(real, forecast){
 }
 
 
-library(dplyr)
+
 ape <- function(real_ds, forecast){
   temp <- cbind(real_ds, forecast)
   sottoarea <- c()
@@ -20,9 +21,9 @@ ape <- function(real_ds, forecast){
 }
 
 meanape <- function(real_ds, forecast){
-  return( mean(ape(real_ds, forecast)$valore))
+  return(mean(ape(real_ds, forecast)$valore))
 }
 
 maxape <- function(real_ds, forecast){
-  return( max(ape(real_ds,forecast)$valrore))
+  return(max(ape(real_ds,forecast)$valore))
 }

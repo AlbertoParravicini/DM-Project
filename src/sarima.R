@@ -188,7 +188,7 @@ full_sarima_prediction <- function(train, test = NA, prediction_length = 0, deta
   
   
   for (prod_i in 1:2) {
-    for (sottoarea_i in sort(unique(train$sottoarea))) {
+    for (sottoarea_i in sort(unique(train$sottoarea))[1:2]) {
       if (all(!is.na(test))) {
         res_temp <- sarima_prediction(train, test, num_prod = prod_i, num_sottoarea = sottoarea_i, details = details, ...)
       }
@@ -210,8 +210,28 @@ full_sarima_prediction <- function(train, test = NA, prediction_length = 0, deta
     }
   }
   result_list_2$data <- as.Date("1970-01-01", format="%Y-%m-%d") + result_list_2$data
-  
   cat("\nSSE MEDIO: ", mean(sse_list), "\n")
   
   return(new("full_sarima_pred_res", predictions = result_list, predictions_2 = result_list_2, sse_list = sse_list))
+}
+
+# result_list_2[, c("prod", "sottoarea")] <- lapply(result_list_2[, c("prod", "sottoarea")], function(x) as.factor(x))
+
+evaluate_sarima_results <- function(validation, prediction) {
+  # Joim the datasets based on date and subarea
+  common_dates <- intersect(unique(validation$data), unique(prediction$data))
+  common_subareas <- intersect(unique(validation$sottoarea), unique(prediction$sottoarea))
+  
+  validation <- filter(validation, data %in% common_dates, sottoarea %in% common_subareas)
+  prediction <- filter(prediction, data %in% common_dates, sottoarea %in% common_subareas)
+
+  validation <- validation[order(validation$prod, validation$sottoarea, validation$data), ]
+  prediction <- prediction[order(prediction$prod, prediction$sottoarea, prediction$data), ]
+  
+  View(validation)
+  View(prediction)
+  print(nrow(validation))
+  print(nrow(prediction))
+  
+  return(mse(validation$vendite, prediction$vendite))
 }
