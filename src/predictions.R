@@ -22,7 +22,7 @@ prediction_length = 10
 # ------------------------------------------------------
 
 setwd("~/DM-Project")
-dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_final.csv", stringsAsFactors=FALSE, row.names=NULL)
+dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_complete.csv", stringsAsFactors=FALSE, row.names=NULL)
 # Remove the x column, if present
 dataset <- dataset[ , !(names(dataset) %in% c("X"))]
 
@@ -38,7 +38,7 @@ if (class(dataset$vendite) == "factor") {
 
 # Turn some features to factors
 factorVars <- c('zona','area', "sottoarea",
-                'prod','giorno_mese', "giorno_settimana", "giorno_anno", "mese", "settimana_anno", "anno", "weekend","stagione", "key")
+                'prod','giorno_mese', "giorno_settimana", "giorno_anno", "mese", "settimana_anno", "anno", "weekend","stagione", "key", "azienda_chiusa")
 
 dataset[factorVars] <- lapply(dataset[factorVars], function(x) as.factor(x))
 
