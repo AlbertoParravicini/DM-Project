@@ -5,7 +5,8 @@ newmap3 <- getMap(resolution = "low")
 plot(newmap3, xlim = c(-10, 30), ylim = c(40, 50), asp = 1)
 points(gps$LONGITUDINE, gps$LATITUDINE, col = "red", cex = .2)
 
-#================= PLOTTING FUNNY MAPS ============================================
+#================= PLOTTING FUNNY MAPS (too many maps!!!!) ============================================
+# plots the coords of each zona
 
 library(dplyr)
 library(rworldmap)
@@ -76,7 +77,9 @@ lines(x,plot_wss, col="red")
 
 #================= KMEANS CLUSTERING ====================================================
 
-k <- 5 #num of clusters
+set.seed(1234)
+
+k <- 6 #num of clusters
 
 cluster <- kmeans(dataset_polimi_complete[,c("latitudine", "longitudine")], center=k)
 temp_dataset <- cbind(dataset_polimi_complete, cluster$cluster)
