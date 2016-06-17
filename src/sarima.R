@@ -18,7 +18,7 @@ library(nortestARMA)
 # If more than one is specified, the highest in the hierarchy is considered.
 
 setClass(Class = "sarima_pred_res", representation(prediction = "ts", sse = "numeric"))
-setClass(Class = "full_sarima_pred_res", representation(predictions = "data.frame", sse_list = "numeric"))
+setClass(Class = "full_sarima_pred_res", representation(predictions = "data.frame", predictions_2 = "data.frame", sse_list = "numeric"))
 
 sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0, num_prod = 1, num_zona = 0, num_area = 0, num_sottoarea = 0, details = T, method = "CSS-ML") {
   if (nrow(data_train)==0) {
@@ -184,6 +184,8 @@ full_sarima_prediction <- function(train, test = NA, prediction_length = 0, deta
   
   sse_list <- c()
   result_list <- data.frame(matrix(NA, nrow = 0, ncol = 12))
+  result_list_2 <- data.frame(matrix(NA, nrow = 0, ncol = 4))
+  
   
   for (prod_i in 1:2) {
     for (sottoarea_i in sort(unique(train$sottoarea))) {
@@ -202,10 +204,14 @@ full_sarima_prediction <- function(train, test = NA, prediction_length = 0, deta
       result_list <- rbind(result_list, temp_row)
 
       cat("SSE: ", attr(res_temp, "sse"), "\n")
+      # Build a second result data frame, built as (prod - area - date - sales).
+      result_list_2_temp <- cbind(prod = as.numeric(prod_i), sottoarea = as.numeric(sottoarea_i), data = as.numeric(index(attr(res_temp, "prediction"))), vendite = as.numeric(coredata(attr(res_temp, "prediction"))))
+      result_list_2 <- rbind(result_list_2, result_list_2_temp)
     }
   }
+  result_list_2$data <- as.Date("1970-01-01", format="%Y-%m-%d") + result_list_2$data
   
   cat("\nSSE MEDIO: ", mean(sse_list), "\n")
   
-  return(new("full_sarima_pred_res", predictions = result_list, sse_list = sse_list))
+  return(new("full_sarima_pred_res", predictions = result_list, predictions_2 = result_list_2, sse_list = sse_list))
 }
