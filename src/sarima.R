@@ -20,7 +20,7 @@ library(nortestARMA)
 setClass(Class = "sarima_pred_res", representation(prediction = "ts", sse = "numeric"))
 setClass(Class = "full_sarima_pred_res", representation(predictions = "data.frame", sse_list = "numeric"))
 
-sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0, num_prod = 1, num_zona = 0, num_area = 0, num_sottoarea = 0, details = T) {
+sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0, num_prod = 1, num_zona = 0, num_area = 0, num_sottoarea = 0, details = T, method = "CSS-ML") {
   if (nrow(data_train)==0) {
     stop("data_train is empty!")
   }
@@ -69,11 +69,12 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   }
   
   # When predicting on a zone or area, predict the sum of sales of individual subzones.
-  filtered_data <- aggregate(cbind(vendite, sp_settimana, sp_mese, sp_anno) ~ data , data = filtered_data, FUN = sum)
+  filtered_data <- aggregate(cbind(vendite) ~ data , data = filtered_data, FUN = sum)
   filtered_data$data <- as.Date(as.character(filtered_data$data),format="%Y-%m-%d")
   
   # Create a timeseries object
   ts_full <- zoo(filtered_data$vendite, order.by = filtered_data$data)
+  
   
   # Split the full timeseries in two
   ts_train <- ts_full[1:train_length]
@@ -90,7 +91,7 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   # ----- Use a SARIMA(1,1,2,1,1,1,7) ------------
   
   # Try to fit the model by keeping into account the dynamic of the residuals, and predict over the test_set
-  fit <- Arima(ts_train, c(2, 0, 2), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T)
+  fit <- Arima(ts_train, c(2, 0, 2), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T, method = method)
   res <- residuals(fit)
   pred <- forecast(fit, prediction_length)
   
@@ -101,7 +102,7 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   }
   
   # Fit the residuals with a purely seasonal ARMA, of lag 6, and predict over the test_set
-  fitres <- Arima(res, c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 6, include.mean = T))
+  fitres <- Arima(res, c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 6), include.mean = T, method = method)
   res2 <- residuals(fitres)
   predres <- forecast(fitres, prediction_length)
   
@@ -112,7 +113,7 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   }
   
   # Fit the residuals of the residuals with another purely seasonal ARMA, of lag 5, and predict over the test_set
-  fitres2 <- Arima(res2, c(0, 0, 0), seasonal = list(order = c(1, 1, 0), period = 5, include.mean = T))
+  fitres2 <- Arima(res2, c(0, 0, 0), seasonal = list(order = c(1, 1, 0), period = 5), include.mean = T, method = method)
   res3 <- residuals(fitres2)
   predres2 <- forecast(fitres2, prediction_length)
   
@@ -171,26 +172,27 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   return(new("sarima_pred_res", prediction=pred_tot, sse=sse))
 }
 
-full_sarima_prediction <- function(train, test = NA, prediction_length = 0, details = F) {
+full_sarima_prediction <- function(train, test = NA, prediction_length = 0, details = F, ...) {
   
   sse_list <- c()
   result_list <- data.frame(matrix(NA, nrow = 0, ncol = 12))
   
-  #unique(dataset$sottoarea)
   for (prod_i in 1:2) {
-    for (sottoarea_i in sort(sample(unique(dataset$sottoarea), 3))) {
+    for (sottoarea_i in 1:3) {
       if (all(!is.na(test))) {
-        res_temp <- sarima_prediction(train, test, num_prod = prod_i, num_sottoarea = sottoarea_i, details = details)
+        res_temp <- sarima_prediction(train, test, num_prod = prod_i, num_sottoarea = sottoarea_i, details = details, ...)
       }
       else {
-        res_temp <- sarima_prediction(train, prediction_length = prediction_length, num_prod = prod_i, num_sottoarea = sottoarea_i, details = details)
+        res_temp <- sarima_prediction(train, prediction_length = prediction_length, num_prod = prod_i, num_sottoarea = sottoarea_i, details = details, ...)
       }
       sse_list <- c(sse_list, attr(res_temp, "sse"))
       cat("\nNUMERO PRODOTTO: ", prod_i, "\n")
       cat("NUMERO SOTTOAREA: ", sottoarea_i, "\n")
       cat("PREDIZIONI: \n")
       cat(coredata(attr(res_temp, "prediction")), "\n")
-      result_list <- rbind(result_list, c(prod_i, sottoarea_i, coredata(attr(res_temp, "prediction"))))
+      temp_row <- data.frame(prod = as.numeric(prod_i), sottoarea = as.numeric(sottoarea_i), matrix(as.numeric(coredata(attr(res_temp, "prediction"))), ncol=length(coredata(attr(res_temp, "prediction")))))
+      result_list <- rbind(result_list, temp_row)
+
       cat("SSE: ", attr(res_temp, "sse"), "\n")
     }
   }

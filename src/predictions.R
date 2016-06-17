@@ -13,7 +13,7 @@ library(normwhn.test)
 library(nortest)
 library(nortestARMA)
 
-prediction_length = 50
+prediction_length = 10
 
 
 
