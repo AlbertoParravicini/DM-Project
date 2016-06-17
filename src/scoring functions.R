@@ -8,7 +8,7 @@ mse <- function(real, forecast){
 
 
 ape <- function(real_ds, forecast){
-  temp <- cbind(real_ds, forecast)
+  temp <- cbind(real_ds, forecast$vendite)
   sottoarea <- c()
   valore <- c()
   # per ogni sottoarea
@@ -17,6 +17,7 @@ ape <- function(real_ds, forecast){
     sottoarea <- c(sottoarea, s)
     valore <- c(valore, mean(abs(temp_s$vendite - temp_s$forecast)/mean(temp_s$vendite)))
   }
+  valore = replace(valore, is.na(valore), 0)
   return(data.frame(sottoarea, valore))
 }
 

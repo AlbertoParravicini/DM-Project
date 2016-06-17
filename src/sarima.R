@@ -9,6 +9,7 @@ library(Metrics)
 library(normwhn.test)
 library(nortest)
 library(nortestARMA)
+source("src/scoring functions.R")
 
 
 # Build a SARIMA model for the specified time series.
@@ -188,7 +189,7 @@ full_sarima_prediction <- function(train, test = NA, prediction_length = 0, deta
   
   
   for (prod_i in 1:2) {
-    for (sottoarea_i in sort(unique(train$sottoarea))[1:2]) {
+    for (sottoarea_i in sort(unique(train$sottoarea))) {
       if (all(!is.na(test))) {
         res_temp <- sarima_prediction(train, test, num_prod = prod_i, num_sottoarea = sottoarea_i, details = details, ...)
       }
@@ -228,10 +229,10 @@ evaluate_sarima_results <- function(validation, prediction) {
   validation <- validation[order(validation$prod, validation$sottoarea, validation$data), ]
   prediction <- prediction[order(prediction$prod, prediction$sottoarea, prediction$data), ]
   
-  View(validation)
-  View(prediction)
-  print(nrow(validation))
-  print(nrow(prediction))
+  mse = mse(validation$vendite, prediction$vendite)
+  ape_list = ape(validation, prediction)
+  mean_ape = meanape(validation, prediction)
+  max_ape = maxape(validation, prediction)
   
-  return(mse(validation$vendite, prediction$vendite))
+  return(data.frame(mse = mse, mape = mean_ape, max_ape = max_ape))
 }
