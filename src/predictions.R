@@ -43,10 +43,15 @@ factorVars <- c('zona','area', "sottoarea",
 dataset[factorVars] <- lapply(dataset[factorVars], function(x) as.factor(x))
 
 summary(dataset)
+
+# Build a smaller dataset, for testing
 s_area = sample(unique(dataset$sottoarea), 1)
 data_p1 <- filter(dataset, prod == 1, sottoarea == s_area)
 
+
+
 # ------------------------------------------------------
+# START OF MODELLING
 # ------------------------------------------------------
 
 # Create historical series of product 1 in zone 1.
