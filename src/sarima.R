@@ -96,7 +96,7 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   # ----- Use a SARIMA(1,1,2,1,1,1,7) ------------
   
   # Try to fit the model by keeping into account the dynamic of the residuals, and predict over the test_set
-  fit <- Arima(ts_train, c(2, 0, 2), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T, method = method)
+  fit <- Arima(ts_train, c(1, 1, 2), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T, method = method)
   res <- residuals(fit)
   pred <- forecast(fit, prediction_length)
   
@@ -131,6 +131,9 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   
   # Put together the previous predictions
   pred_tot <- pred$mean + predres$mean + predres2$mean
+  
+  # If negative values are predicted, round them to zero.
+  pred_tot <- ifelse(pred_tot < 0, 0, pred_tot)
   
   sse <- -1
   if (all(!is.na(data_test))) {
