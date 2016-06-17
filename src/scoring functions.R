@@ -1,12 +1,28 @@
-# mean absolute prediction error (MAPE)
-meanape <- function(real, forecast){
-  return(mean(abs(real - forecast)))
-}
-# max absolute prediction error
-maxape <- function(real, forecast){
-  return(max(abs(real - forecast)))
-}
+
 # mean squared errors (MSE)
 mse <- function(real, forecast){
   return((1/length(real))*sum((real - forecast)^2))
+}
+
+
+library(dplyr)
+ape <- function(real_ds, forecast){
+  temp <- cbind(real_ds, forecast)
+  sottoarea <- c()
+  valore <- c()
+  # per ogni sottoarea
+  for (s in unique(temp$sottoarea)){
+    temp_s <- filter(temp, sottoarea==s)
+    sottoarea <- c(sottoarea, s)
+    valore <- c(valore, mean(abs(temp_s$vendite - temp_s$forecast)/mean(temp_s$vendite)))
+  }
+  return(data.frame(sottoarea, valore))
+}
+
+meanape <- function(real_ds, forecast){
+  return( mean(ape(real_ds, forecast)$valore))
+}
+
+maxape <- function(real_ds, forecast){
+  return( max(ape(real_ds,forecast)$valrore))
 }
