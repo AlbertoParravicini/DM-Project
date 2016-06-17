@@ -9,8 +9,7 @@ library(nnet) # For binarization
 library(zoo) # For time series
 
 # Import data
-setwd("~/DM-Project")
-dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_final.csv", stringsAsFactors=FALSE, row.names=NULL)
+dataset <- read.csv("Modified data/dataset_polimi_final.csv", stringsAsFactors=FALSE, row.names=NULL)
 
 # N di sottoaree per prodotto
 nrow(filter(dataset, data == "2014-01-01", prod == 1))
