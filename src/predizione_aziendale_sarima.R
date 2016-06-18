@@ -24,16 +24,14 @@ colnames(dataset)[which(colnames(dataset) == 'vendite_giorn_prod')] <- 'vendite'
 
 dataset$zona <- 999
 current_prod <- 1
-n_test_rows <- 10
+n_test_rows <- 30
 
 
 dataset <- filter(dataset, prod == current_prod)
+dataset$data <- as.Date(as.character(dataset$data),format="%Y-%m-%d")
 
-tot_rows <- nrow(dataset)
-n_train_rows <- tot_rows - n_test_rows
-
-data_train <- dataset[1:n_train_rows,]
-data_test <- dataset[(n_train_rows+1):tot_rows,]
+data_train <- filter(dataset, data <= max(data) - n_test_rows)
+data_test <- filter(dataset, data > max(data) - n_test_rows)
 
 sarima_prediction(data_train = data_train, data_test = data_test, num_prod = current_prod, num_zona = 999, details = T)
 
