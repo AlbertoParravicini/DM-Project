@@ -17,14 +17,16 @@ dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_with_holidays.csv
 
 prediction_length <- 10
 
-data_train <- filter(dataset, data <= max(data) - prediction_length)
-data_test <- filter(dataset, data > max(data) - prediction_length)
+
 
 
 # Convert dates to class "Data"
 dataset$data <- as.Date(dataset$data, format = "%Y-%m-%d")
 data_train$data <- as.Date(data_train$data, format = "%Y-%m-%d")
 data_test$data <- as.Date(data_test$data, format = "%Y-%m-%d")
+
+data_train <- filter(dataset, data <= max(data) - prediction_length)
+data_test <- filter(dataset, data > max(data) - prediction_length)
 
 # Convert "vendite" to numeric values if needed
 if (class(dataset$vendite) == "factor") {
@@ -72,8 +74,16 @@ if (class(rfs_test$vendite) == "factor") {
 summary(rfs_train)
 summary(rfs_test)
 
+
+# ============================================
+# ============================================
+# Ranger random forest model builder =========
+# ============================================
+# ============================================
 rfs <- function(train_set, test_set, num_trees = 400, details = F){
 
+  prediction_length <- nrow(test_set)
+  
   rfs_model <- ranger(train_set,
                        formula=vendite ~ zona + area + sottoarea  + prod + giorno_settimana +
                         giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend +
@@ -98,14 +108,29 @@ rfs <- function(train_set, test_set, num_trees = 400, details = F){
   # predict
   rfs_predict <- predict(rfs_model, test_set)
   
-
+  print(rfs_predict$predictions)
+  View(test_set)
+  
   sse <- (1/prediction_length)*sum(rfs_predict$predictions - test_set$vendite)^2
   if (details) {
     cat("SSE: ", sse, "\n")
-    cat("MAPE: ", meanape(train_set$vendite, rfs_predict$predictions), "\n")
-    cat("MAX APE: ", maxape(train_set$vendite, rfs_predict$predictions), "\n")
+    cat("MAPE: ", mean(abs(rfs_predict$predictions - test_set$vendite)/mean(test_set$vendite)), "\n")
+    cat("MAX APE: ", max(abs(rfs_predict$predictions - test_set$vendite)/mean(test_set$vendite)), "\n")
     
+    print((1/prediction_length)*sum(rfs_predict$predictions[1:10] - test_set$vendite[1:10])^2)
   }
+  
+  # if (details) {
+  #   pred_table <- data.frame(vendite=rfs_predict$predictions, data=seq.Date(from=max(train_set$data)+1, length.out = prediction_length, by = 1), type = "pred")
+  #   
+  #   table_tot <- rbind(data.frame(vendite = train_set[, "vendite"], data = train_set[, "data"], type = "train"), data.frame(vendite = test_set[, "vendite"], data = test_set[, "data"], type = "test"), pred_table)
+  #   
+  #   p <- ggplot(table_tot, aes(x=data, y=vendite, color = type)) + 
+  #     coord_cartesian(xlim = c(max(train_set$data)-prediction_length, max(train_set$data)+prediction_length))
+  #   p <- p + geom_line(size = 1) + geom_point(size = 2) + scale_colour_colorblind()
+  #   p <- p + theme_economist() +xlab("Data") + ylab("Numero di vendite") 
+  #   print(p)
+  # }
 
   return(rfs_predict)
 }
@@ -114,30 +139,42 @@ rfs <- function(train_set, test_set, num_trees = 400, details = F){
 n <- 400
 
 # get the prediction
-rfs_prediction <- rfs(n)
+rfs_prediction <- rfs(rfs_train, rfs_test, details = T, num_trees = n)
 
 # # get sse
-# 
-# rfs_sse <- (1/nrow(rfs_test))*sum((rfs_test$vendite - rfs_prediction$predictions)^2)
-# print(rfs_sse)
 
-# requires "scoring functions.R"
-maxape(rfs_test$vendite, rfs_prediction$predictions)
-meanape(rfs_test$vendite, rfs_prediction$predictions)
+rfs_sse <- (1/nrow(rfs_test))*sum((rfs_test$vendite - rfs_prediction$predictions)^2)
+print(rfs_sse)
+
+# # requires "scoring functions.R"
+# maxape(rfs_test$vendite, rfs_prediction$predictions)
+# meanape(rfs_test$vendite, rfs_prediction$predictions)
 
 # ============ Random Forest: Multiple models for different sottoareas ==============
 
 # k is the key of the location
 # n is the number of trees to spawn
-rfm <- function(k,n){
+rfm <- function(dataset, predicion_set = NA, prediction_length = 10, key, num_trees = 400, details = F){
   
-  rfm_train <- filter(dataset, anno < 2016 | giorno_anno <= (140-prediction_length), key==k)
+  rfm_train <- filter(dataset, data <= max(data) - prediction_length, key==key)
   
-  rfm_test <- filter(dataset, anno==2016 & giorno_anno >(140-prediction_length), key==k)
+  if (is.na(predicion_set)) {
+    rfm_test <- filter(dataset, data > max(data) - prediction_length, key==key)
+  }
+  else {
+    rfm_test <- filter(predicion_set, key==key)
+    if (nrow(rfs_test) < prediction_length) {
+      stop("The prediction set is too small!")
+    }
+  }
+  
+  
   
   # Turn some features to factors
   factorVars <- c('zona','area', "sottoarea",
-                  'prod','giorno_mese', "giorno_settimana", "giorno_anno", "mese", "settimana_anno", "anno", "weekend","stagione", "key", "primo_del_mese", "azienda_chiusa", "cluster")
+                  'prod','giorno_mese', "giorno_settimana", "giorno_anno", "mese", 
+                  "settimana_anno", "anno", "weekend","stagione", "key", "primo_del_mese",
+                  "azienda_chiusa", "cluster3", "cluster6", "cluster20", "vacanza")
   
   rfm_train[factorVars] <- lapply(rfm_train[factorVars], function(x) as.factor(x))
   rfm_test[factorVars] <- lapply(rfm_test[factorVars], function(x) as.factor(x))
@@ -157,8 +194,11 @@ rfm <- function(k,n){
   
   
   rfm_model <- ranger(rfm_train,
-                      formula=vendite ~ prod + giorno_settimana + giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend + stagione + primo_del_mese + cluster + latitudine + longitudine,
-                      num.trees = n, importance="impurity", write.forest = T)
+                      formula=vendite ~ zona + area + sottoarea  + prod + giorno_settimana +
+                        giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend +
+                        stagione + primo_del_mese + cluster3 + cluster6 + cluster20 +
+                        latitudine + longitudine + vacanza,
+                      num.trees = num_trees, importance="impurity", write.forest = T, verbose = details, num.threads = 4)
   
   # # plot importance
   # 
@@ -181,13 +221,15 @@ rfm <- function(k,n){
   
   return(rfm_predict)
 }
+
 # num trees
-n<- 400
+n <- 1
 
 # join the prediction vectors into a single vector
 rfm_prediction_global <- vector(mode="numeric", length=0)
 for(i in unique(dataset$key)){
-  temp <- rfm(i,n)
+  cat("Current key: ", i, " - Percentage: ", 100*i/length(unique(dataset$key)), "%\n")
+  temp <- rfm(dataset = dataset, prediction_length = 10, key = i, num_trees = n, details = F)
   rfm_prediction_global <- c(rfm_prediction_global, temp$predictions)
 }
 
