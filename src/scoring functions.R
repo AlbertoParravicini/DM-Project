@@ -6,7 +6,6 @@ mse <- function(real, forecast){
 }
 
 
-
 ape <- function(real_ds, forecast){
   temp <- cbind(real_ds, forecast$vendite)
   sottoarea <- c()
