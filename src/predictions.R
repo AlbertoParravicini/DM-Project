@@ -22,7 +22,7 @@ prediction_length = 10
 # ------------------------------------------------------
 
 setwd("~/DM-Project")
-dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_complete.csv", stringsAsFactors=FALSE, row.names=NULL)
+dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_cluster_tot_pred.csv", stringsAsFactors=FALSE, row.names=NULL)
 # Remove the x column, if present
 dataset <- dataset[ , !(names(dataset) %in% c("X"))]
 
@@ -38,15 +38,20 @@ if (class(dataset$vendite) == "factor") {
 
 # Turn some features to factors
 factorVars <- c('zona','area', "sottoarea",
-                'prod','giorno_mese', "giorno_settimana", "giorno_anno", "mese", "settimana_anno", "anno", "weekend","stagione", "key", "azienda_chiusa", "primo_del_mese")
+                'prod','giorno_mese', "giorno_settimana", "giorno_anno", "mese", "settimana_anno", "anno", "weekend","stagione", "key", "azienda_chiusa", "primo_del_mese", "cluster3", "cluster6", "cluster20")
 
 dataset[factorVars] <- lapply(dataset[factorVars], function(x) as.factor(x))
 
 summary(dataset)
+
+# Build a smaller dataset, for testing
 s_area = sample(unique(dataset$sottoarea), 1)
 data_p1 <- filter(dataset, prod == 1, sottoarea == s_area)
 
+
+
 # ------------------------------------------------------
+# START OF MODELLING
 # ------------------------------------------------------
 
 # Create historical series of product 1 in zone 1.
@@ -255,8 +260,3 @@ cat("sottoarea: ", s_area, "\n")
 
 train <- filter(dataset, data <= max(data) - prediction_length)
 test <- filter(dataset, data > max(data) - prediction_length)
-
-
-
-
-

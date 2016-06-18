@@ -9,6 +9,7 @@ library(Metrics)
 library(normwhn.test)
 library(nortest)
 library(nortestARMA)
+source("src/scoring functions.R")
 
 
 # Build a SARIMA model for the specified time series.
@@ -20,7 +21,7 @@ library(nortestARMA)
 setClass(Class = "sarima_pred_res", representation(prediction = "ts", sse = "numeric"))
 setClass(Class = "full_sarima_pred_res", representation(predictions = "data.frame", predictions_2 = "data.frame", sse_list = "numeric"))
 
-sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0, num_prod = 1, num_zona = 0, num_area = 0, num_sottoarea = 0, details = T, method = "CSS-ML") {
+sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0, num_prod = 1, num_zona = 0, num_area = 0, num_sottoarea = 0, details = T, method = "CSS-ML", regressors = NULL) {
   if (nrow(data_train)==0) {
     stop("data_train is empty!")
   }
@@ -74,7 +75,7 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   }
   
   # When predicting on a zone or area, predict the sum of sales of individual subzones.
-  filtered_data <- aggregate(cbind(vendite) ~ data , data = filtered_data, FUN = sum)
+  filtered_data <- aggregate(cbind(vendite, vendite_giorn_prod) ~ data , data = filtered_data, FUN = sum)
   filtered_data$data <- as.Date(as.character(filtered_data$data),format="%Y-%m-%d")
   
   # Create a timeseries object
@@ -86,19 +87,27 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   ts_test <- ts_full[(train_length+1):(prediction_length+train_length)]
   
   # Use external inputs as regressors.
-  # Found to be not useful.
   #train_regressors <- matrix(c(filtered_data$sp_settimana[1:train_length], filtered_data$sp_mese[1:train_length], filtered_data$sp_anno[1:train_length]), ncol = 3)
   #test_regressors <- matrix(c(filtered_data$sp_settimana[(train_length+1):(prediction_length+train_length)], filtered_data$sp_mese[(train_length+1):(prediction_length+train_length)], filtered_data$sp_anno[(train_length+1):(prediction_length+train_length)]), ncol = 3)
+  train_regressors <- matrix(filtered_data$vendite_giorn_prod[1:train_length], ncol = 1)
   
+  # Need to predict the test regressors!
+  if (all(is.na(regressors))) {
+    test_regressors <- pred_test_regressors(end(ts_train)+1, prediction_length = prediction_length, method = method, num_prod = num_prod)$mean
+    print(test_regressors)
+  } else {
+    test_regressors <- regressors$mean
+  }
+
   
   # ---------------------------------------------
   # ----- START OF MODELING ---------------------
   # ----- Use a SARIMA(1,1,2,1,1,1,7) ------------
   
   # Try to fit the model by keeping into account the dynamic of the residuals, and predict over the test_set
-  fit <- Arima(ts_train, c(1, 1, 2), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T, method = method)
+  fit <- Arima(ts_train, c(1, 1, 1), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T, method = method, xreg = train_regressors)
   res <- residuals(fit)
-  pred <- forecast(fit, prediction_length)
+  pred <- forecast(fit, prediction_length, xreg = test_regressors)
   
   
   if (details) {
@@ -107,9 +116,9 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   }
   
   # Fit the residuals with a purely seasonal ARMA, of lag 6, and predict over the test_set
-  fitres <- Arima(res, c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 6), include.mean = T, method = method)
+  fitres <- Arima(res, c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 6), include.mean = T, method = method, xreg = train_regressors)
   res2 <- residuals(fitres)
-  predres <- forecast(fitres, prediction_length)
+  predres <- forecast(fitres, prediction_length, xreg = test_regressors)
   
   
   if (details) {
@@ -118,9 +127,9 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   }
   
   # Fit the residuals of the residuals with another purely seasonal ARMA, of lag 5, and predict over the test_set
-  fitres2 <- Arima(res2, c(0, 0, 0), seasonal = list(order = c(1, 1, 0), period = 5), include.mean = T, method = method)
+  fitres2 <- Arima(res2, c(0, 0, 0), seasonal = list(order = c(1, 1, 0), period = 5), include.mean = T, method = method, xreg = train_regressors)
   res3 <- residuals(fitres2)
-  predres2 <- forecast(fitres2, prediction_length)
+  predres2 <- forecast(fitres2, prediction_length, xreg = test_regressors)
   
   
   
@@ -185,15 +194,21 @@ full_sarima_prediction <- function(train, test = NA, prediction_length = 0, deta
   sse_list <- c()
   result_list <- data.frame(matrix(NA, nrow = 0, ncol = 12))
   result_list_2 <- data.frame(matrix(NA, nrow = 0, ncol = 4))
+  if (all(!is.na(data_test))) {
+    prediction_length <- length(unique(data_test$data))
+  }
   
   
   for (prod_i in 1:2) {
-    for (sottoarea_i in sort(unique(train$sottoarea))) {
+    cat("prodotto: ", prod_i, "\n")
+    exo_input <- pred_test_regressors(max(train$data)+1, prediction_length = prediction_length, num_prod = prod_i, ...)
+    for (sottoarea_i in sort(unique(train$sottoarea))[1:2]) {
+      cat("sottoarea: ", sottoarea_i, "\n")
       if (all(!is.na(test))) {
-        res_temp <- sarima_prediction(train, test, num_prod = prod_i, num_sottoarea = sottoarea_i, details = details, ...)
+        res_temp <- sarima_prediction(train, test, num_prod = prod_i, num_sottoarea = sottoarea_i, details = details, regressors = exo_input, ...)
       }
       else {
-        res_temp <- sarima_prediction(train, prediction_length = prediction_length, num_prod = prod_i, num_sottoarea = sottoarea_i, details = details, ...)
+        res_temp <- sarima_prediction(train, prediction_length = prediction_length, num_prod = prod_i, num_sottoarea = sottoarea_i, details = details, regressors = exo_input, ...)
       }
       sse_list <- c(sse_list, attr(res_temp, "sse"))
       cat("\nNUMERO PRODOTTO: ", prod_i, "\n")
@@ -210,8 +225,90 @@ full_sarima_prediction <- function(train, test = NA, prediction_length = 0, deta
     }
   }
   result_list_2$data <- as.Date("1970-01-01", format="%Y-%m-%d") + result_list_2$data
-  
   cat("\nSSE MEDIO: ", mean(sse_list), "\n")
   
   return(new("full_sarima_pred_res", predictions = result_list, predictions_2 = result_list_2, sse_list = sse_list))
+}
+
+# result_list_2[, c("prod", "sottoarea")] <- lapply(result_list_2[, c("prod", "sottoarea")], function(x) as.factor(x))
+
+evaluate_sarima_results <- function(validation, prediction) {
+  # Joim the datasets based on date and subarea
+  common_dates <- intersect(unique(validation$data), unique(prediction$data))
+  common_subareas <- intersect(unique(validation$sottoarea), unique(prediction$sottoarea))
+  
+  validation <- filter(validation, data %in% common_dates, sottoarea %in% common_subareas)
+  prediction <- filter(prediction, data %in% common_dates, sottoarea %in% common_subareas)
+
+  validation <- validation[order(validation$prod, validation$sottoarea, validation$data), ]
+  prediction <- prediction[order(prediction$prod, prediction$sottoarea, prediction$data), ]
+  
+  mse = mse(validation$vendite, prediction$vendite)
+  ape_list = ape(validation, prediction)
+  mean_ape = meanape(validation, prediction)
+  max_ape = maxape(validation, prediction)
+  
+  return(data.frame(mse = mse, mape = mean_ape, max_ape = max_ape))
+}
+
+pred_test_regressors <- function(prediction_start, prediction_length, method = "ML-CSS", num_prod = 1) {
+  setwd("~/DM-Project")
+
+  # Use the exogen signal of the overall sales
+  vendite_giornaliere_prod <- read.csv("~/DM-Project/Modified data/vendite_giornaliere_prod.csv", row.names=NULL, stringsAsFactors=FALSE)
+  vendite_giornaliere_prod$prod <- as.factor(vendite_giornaliere_prod$prod)
+  
+  # Turn dates to "Date" class
+  prediction_start <- as.Date(prediction_start, format = "%Y-%m-%d")
+  vendite_giornaliere_prod$data <- as.Date(as.character(vendite_giornaliere_prod$data),format="%Y-%m-%d")
+  
+  colnames(vendite_giornaliere_prod)[which(colnames(vendite_giornaliere_prod) == 'vendite_giorn_prod')] <- 'vendite'
+  
+  summary(vendite_giornaliere_prod)
+  
+  if (!prediction_start %in% vendite_giornaliere_prod$data) {
+    stop("Invalid starting date")
+  }
+
+  vendite_giornaliere_prod <- filter(vendite_giornaliere_prod, prod == num_prod)
+  # Use only the data until "prediction_start"
+  test_vendite <- filter(vendite_giornaliere_prod, data >= prediction_start)
+  vendite_giornaliere_prod <- filter(vendite_giornaliere_prod, data < prediction_start)
+
+  
+  ts_vendite <- zoo(vendite_giornaliere_prod$vendite, order.by = vendite_giornaliere_prod$data)
+  tsdisplay(diff(ts_vendite,7))
+  
+  # Try to fit the model by keeping into account the dynamic of the residuals, and predict over the test_set
+  # 1 0 2 3 2 5
+  fit <- Arima(ts_vendite, c(1, 0, 2), seasonal = list(order = c(2, 2, 5), period = 7), include.mean = T)#, method = method)
+  res <- residuals(fit)
+  tsdisplay(res, lag.max = 60)
+  print(fit)
+  pred <- forecast(fit, prediction_length)
+  print((1/prediction_length)*sum((test_vendite$vendite - pred$mean)^2))
+
+  
+  # # Fit the residuals with a purely seasonal ARMA, of lag 6, and predict over the test_set
+  # fitres <- Arima(res, c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 6), include.mean = T)#, method = method)
+  # res2 <- residuals(fitres)
+  # predres <- forecast(fitres, prediction_length)
+  # 
+  # 
+  # # Fit the residuals of the residuals with another purely seasonal ARMA, of lag 5, and predict over the test_set
+  # fitres2 <- Arima(res2, c(0, 0, 0), seasonal = list(order = c(1, 1, 0), period = 5), include.mean = T)#, method = method)
+  # res3 <- residuals(fitres2)
+  # predres2 <- forecast(fitres2, prediction_length)
+  # 
+  # tsdisplay(res3, main ="overall prediction - res 3")
+  # 
+  # # Put together the previous predictions
+  # pred_tot <- pred$mean + predres$mean + predres2$mean
+  # 
+  # # If negative values are predicted, round them to zero.
+  # pred_tot <- ifelse(pred_tot < 0, 0, pred_tot)
+  # 
+  # print((1/prediction_length)*sum((test_vendite$vendite - pred_tot)^2))
+
+  return(coredata(pred))
 }
