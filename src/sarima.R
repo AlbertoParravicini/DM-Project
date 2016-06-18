@@ -230,7 +230,6 @@ full_sarima_prediction <- function(train, test = NA, prediction_length = 0, deta
   return(new("full_sarima_pred_res", predictions = result_list, predictions_2 = result_list_2, sse_list = sse_list))
 }
 
-# result_list_2[, c("prod", "sottoarea")] <- lapply(result_list_2[, c("prod", "sottoarea")], function(x) as.factor(x))
 
 evaluate_sarima_results <- function(validation, prediction) {
   # Joim the datasets based on date and subarea

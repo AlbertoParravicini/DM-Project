@@ -42,6 +42,11 @@ factorVars <- c('zona','area', "sottoarea",
 
 dataset[factorVars] <- lapply(dataset[factorVars], function(x) as.factor(x))
 
+dataset <- dataset[order(dataset$prod, dataset$zona, dataset$area, dataset$sottoarea), ]
+
+dataset <- dataset[ , !(names(dataset) %in% c("vendite_giorn_prod"))]
+colnames(dataset)[which(colnames(dataset) == 'vendite_giorn_prod.x')] <- 'vendite_giorn_prod'
+
 summary(dataset)
 
 # Build a smaller dataset, for testing
@@ -197,7 +202,7 @@ data_p1$data <- as.Date(as.character(data_p1$data),format="%Y-%m-%d")
 data_train <- data_p1[1:(nrow(data_p1)-prediction_length), ]
 data_test <- data_p1[nrow(data_train) +1:prediction_length, ]
 forest_reg <- ranger(data_train,
-                     formula=vendite ~ giorno_settimana + giorno_mese + giorno_anno + mese + weekend + stagione,
+                     formula=vendite ~ giorno_settimana + giorno_mese + giorno_anno + mese + weekend + stagione + primo_del_mese + azienda_chiusa + longitudine + latitudine + cluster3 + cluster6 + cluster20,
                      num.trees = 400, importance="impurity", write.forest = T)
 
 #Get importance of forest_reg
@@ -226,7 +231,7 @@ points(coredata(pred_tot), col="blue")
 
 # Effective sse of the prediction
 (1/length(p1_test))*sum((coredata(p1_test) - pred_tot)^2)
-(1/nrow(data_test))*sum((forest_pred$predictions - data_test$vendite)^2)
+
 
 # ---------------------------------------
 # Use XGBoost
