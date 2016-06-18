@@ -1,29 +1,34 @@
-library(dplyr)
-library(ranger)
+library(xts)
 library(ggplot2)
-library(ggthemes)
-library(zoo)
+library(dplyr)
+library(tseries)
+library(PerformanceAnalytics)
+library(forecast)
+library(astsa)
+library(Metrics)
 library(xgboost)
+library(ranger)
+library(ggthemes) # visualization
+source("src/scoring functions.R")
 
-dataset_polimi <- read.csv("~/DM-Project/Modified data/dataset_polimi_complete.csv", stringsAsFactors=FALSE, row.names=NULL)
+dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_with_holidays.csv", stringsAsFactors=FALSE, row.names=NULL)
 
-# dataset_polimi <- dataset_polimi_complete
+# dataset <- dataset_complete
 
-giorni_test <- 10
+prediction_length <- 10
 
-data_train <- filter(dataset_polimi, anno < 2016 | giorno_anno <= (140-giorni_test))
-
-data_test <- filter(dataset_polimi, anno==2016 & giorno_anno > (140-giorni_test))
+data_train <- filter(dataset, data <= max(data) - prediction_length)
+data_test <- filter(dataset, data > max(data) - prediction_length)
 
 
 # Convert dates to class "Data"
-dataset_polimi$data <- as.Date(dataset_polimi$data)
-data_train$data <- as.Date(data_train$data)
-data_test$data <- as.Date(data_test$data)
+dataset$data <- as.Date(dataset$data, format = "%Y-%m-%d")
+data_train$data <- as.Date(data_train$data, format = "%Y-%m-%d")
+data_test$data <- as.Date(data_test$data, format = "%Y-%m-%d")
 
 # Convert "vendite" to numeric values if needed
-if (class(dataset_polimi$vendite) == "factor") {
-  dataset_polimi$vendite <- as.numeric(levels(dataset_polimi$vendite))[dataset_polimi$vendite]
+if (class(dataset$vendite) == "factor") {
+  dataset$vendite <- as.numeric(levels(dataset$vendite))[dataset$vendite]
 }
 if (class(data_train$vendite) == "factor") {
   data_train$vendite <- as.numeric(levels(data_train$vendite))[data_train$vendite]
@@ -37,23 +42,23 @@ if (class(data_test$vendite) == "factor") {
 
 # ============ Random Forest: single model for all sottoarea ======================
 
-rfs_train <- filter(dataset_polimi, anno < 2016 | giorno_anno <= (140-giorni_test))
+rfs_train <- filter(dataset, data <= max(data) - prediction_length)
 
-rfs_test <- filter(dataset_polimi, anno==2016 & giorno_anno >(140-giorni_test))
+rfs_test <- filter(dataset, data > max(data) - prediction_length)
 
 
 
 # Turn some features to factors
 factorVars <- c('zona','area', "sottoarea",
-                'prod','giorno_mese', "giorno_settimana", "giorno_anno", "mese", "settimana_anno", "anno", "weekend","stagione", "key", "primo_del_mese", "azienda_chiusa", "cluster")
+                'prod','giorno_mese', "giorno_settimana", "giorno_anno", "mese", "settimana_anno", "anno", "weekend","stagione", "key", "primo_del_mese", "azienda_chiusa", "cluster3", "cluster6", "cluster20", "vacanza")
 
 
 rfs_train[factorVars] <- lapply(rfs_train[factorVars], function(x) as.factor(x))
 rfs_test[factorVars] <- lapply(rfs_test[factorVars], function(x) as.factor(x))
 
 # Convert dates to class "Data"
-rfs_train$data <- as.Date(rfs_train$data)
-rfs_test$data <- as.Date(rfs_test$data)
+rfs_train$data <- as.Date(rfs_train$data, format = "%Y-%m-%d")
+rfs_test$data <- as.Date(rfs_test$data, format = "%Y-%m-%d")
 
 
 # Convert "vendite" to numeric values if needed
@@ -64,30 +69,45 @@ if (class(rfs_test$vendite) == "factor") {
   rfs_test$vendite <- as.numeric(levels(rfs_test$vendite))[rfs_test$vendite]
 }
 
+summary(rfs_train)
+summary(rfs_test)
 
-rfs <- function(n){
+rfs <- function(train_set, test_set, num_trees = 400, details = F){
 
-  rfs_model <- ranger(rfs_train,
-                       formula=vendite ~ key+ zona + area + sottoarea  + prod + giorno_settimana + giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend + stagione + primo_del_mese + cluster + latitudine + longitudine,
-                       num.trees = n, importance="impurity", write.forest = T)
+  rfs_model <- ranger(train_set,
+                       formula=vendite ~ zona + area + sottoarea  + prod + giorno_settimana +
+                        giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend +
+                        stagione + primo_del_mese + cluster3 + cluster6 + cluster20 +
+                        latitudine + longitudine + vacanza,
+                       num.trees = num_trees, importance="impurity", write.forest = T, verbose = details, num.threads = 4)
   
-  # # plot importance
-  # 
-  # rfs_importance <- importance(rfs_model)
-  # rfs_importance_df <- data.frame(name = names(rfs_importance), rfs_importance)
-  # ggplot(rfs_importance_df, aes(x = reorder(name, rfs_importance), 
-  #                           y = rfs_importance)) +
-  #   geom_bar(stat='identity', colour = 'black') +
-  #   labs(x = 'Variables', title = 'Relative Variable Importance') +
-  #   coord_flip() + 
-  #   theme_few()
+  # plot importance
+  if (details) {
+    rfs_importance <- importance(rfs_model)
+    rfs_importance_df <- data.frame(name = names(rfs_importance), rfs_importance)
+    plot <- ggplot(rfs_importance_df, aes(x = reorder(name, rfs_importance),
+                              y = rfs_importance)) +
+      geom_bar(stat='identity', colour = 'black') +
+      labs(x = 'Variables', title = 'Relative Variable Importance') +
+      coord_flip() +
+      theme_few()
+    print(plot)
+    print(rfs_model)
+  }
   
   # predict
+  rfs_predict <- predict(rfs_model, test_set)
   
-  rfs_predict <- predict(rfs_model, rfs_test)
-  
-  return(rfs_predict)
 
+  sse <- (1/prediction_length)*sum(rfs_predict$predictions - test_set$vendite)^2
+  if (details) {
+    cat("SSE: ", sse, "\n")
+    cat("MAPE: ", meanape(train_set$vendite, rfs_predict$predictions), "\n")
+    cat("MAX APE: ", maxape(train_set$vendite, rfs_predict$predictions), "\n")
+    
+  }
+
+  return(rfs_predict)
 }
 
 # number of trees to use
@@ -111,9 +131,9 @@ meanape(rfs_test$vendite, rfs_prediction$predictions)
 # n is the number of trees to spawn
 rfm <- function(k,n){
   
-  rfm_train <- filter(dataset_polimi, anno < 2016 | giorno_anno <= (140-giorni_test), key==k)
+  rfm_train <- filter(dataset, anno < 2016 | giorno_anno <= (140-prediction_length), key==k)
   
-  rfm_test <- filter(dataset_polimi, anno==2016 & giorno_anno >(140-giorni_test), key==k)
+  rfm_test <- filter(dataset, anno==2016 & giorno_anno >(140-prediction_length), key==k)
   
   # Turn some features to factors
   factorVars <- c('zona','area', "sottoarea",
@@ -166,7 +186,7 @@ n<- 400
 
 # join the prediction vectors into a single vector
 rfm_prediction_global <- vector(mode="numeric", length=0)
-for(i in unique(dataset_polimi$key)){
+for(i in unique(dataset$key)){
   temp <- rfm(i,n)
   rfm_prediction_global <- c(rfm_prediction_global, temp$predictions)
 }
