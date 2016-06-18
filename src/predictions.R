@@ -265,3 +265,5 @@ cat("sottoarea: ", s_area, "\n")
 
 train <- filter(dataset, data <= max(data) - prediction_length)
 test <- filter(dataset, data > max(data) - prediction_length)
+
+

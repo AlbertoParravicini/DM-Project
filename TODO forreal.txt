@@ -1,7 +1,4 @@
-* Aggiungi festività: 01-01, 01-06, 04-25, 05-01, 06-02, 08-15, 11-01, 12-08, 12-25, 12-26
-					Pasqua 2014: 2014-04-20, 2014-04-21
-					Pasqua 2015: 2015-04-05, 2015-04-6
-					Pasqua 2016: 2016-03-27, 2016-03-28
+* Modifica risultato forest così che sia prodotto [zona area sottoarea data vendita]
 					
 * Random forest su nuovo dataset, un modello per area.
 	* Test set

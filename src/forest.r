@@ -10,6 +10,7 @@ library(xgboost)
 library(ranger)
 library(ggthemes) # visualization
 source("src/scoring functions.R")
+library(stringr)
 
 dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_with_holidays.csv", stringsAsFactors=FALSE, row.names=NULL)
 
@@ -117,7 +118,7 @@ rfs <- function(train_set, test_set, num_trees = 400, details = F){
     cat("MAPE: ", mean(abs(rfs_predict$predictions - test_set$vendite)/mean(test_set$vendite)), "\n")
     cat("MAX APE: ", max(abs(rfs_predict$predictions - test_set$vendite)/mean(test_set$vendite)), "\n")
     
-    print((1/prediction_length)*sum(rfs_predict$predictions[1:10] - test_set$vendite[1:10])^2)
+    print((1/prediction_length)*sum(rfs_predict$predictions[11:20] - test_set$vendite[11:20])^2)
   }
   
   # if (details) {
@@ -131,7 +132,7 @@ rfs <- function(train_set, test_set, num_trees = 400, details = F){
   #   p <- p + theme_economist() +xlab("Data") + ylab("Numero di vendite") 
   #   print(p)
   # }
-
+  print(test_set$vendite)
   return(rfs_predict)
 }
 
@@ -154,15 +155,16 @@ print(rfs_sse)
 
 # k is the key of the location
 # n is the number of trees to spawn
-rfm <- function(dataset, predicion_set = NA, prediction_length = 10, key, num_trees = 400, details = F){
+rfm <- function(dataset, predicion_set = NA, prediction_length = 10, key_i, num_trees = 400, details = F){
   
-  rfm_train <- filter(dataset, data <= max(data) - prediction_length, key==key)
-  
+
+  rfm_train <- filter(dataset, data <= max(data) - prediction_length, key == key_i)
+
   if (is.na(predicion_set)) {
-    rfm_test <- filter(dataset, data > max(data) - prediction_length, key==key)
+    rfm_test <- filter(dataset, data > max(data) - prediction_length, key == key_i)
   }
   else {
-    rfm_test <- filter(predicion_set, key==key)
+    rfm_test <- filter(predicion_set, key == key_i)
     if (nrow(rfs_test) < prediction_length) {
       stop("The prediction set is too small!")
     }
@@ -223,15 +225,35 @@ rfm <- function(dataset, predicion_set = NA, prediction_length = 10, key, num_tr
 }
 
 # num trees
-n <- 1
+n <- 400
+# predicion_length
+prediction_length <- 10
 
 # join the prediction vectors into a single vector
 rfm_prediction_global <- vector(mode="numeric", length=0)
-for(i in unique(dataset$key)){
-  cat("Current key: ", i, " - Percentage: ", 100*i/length(unique(dataset$key)), "%\n")
-  temp <- rfm(dataset = dataset, prediction_length = 10, key = i, num_trees = n, details = F)
+c = 1
+res_frame <- data.frame(matrix(NA, ncol = 4, nrow = 0))
+for(i in sort(unique(dataset$key))[1:1]){
+  cat("Current key: ", i, " - Percentage: ", 100*c/length(unique(dataset$key)), "%\n")
+  temp <- rfm(dataset = dataset, prediction_length = prediction_length, key = i, num_trees = n, details = T)
+  print(temp$predictions)
+  
+  prod_1_pred <- temp$predictions[1:prediction_length]
+  prod_2_pred <- temp$predictions[(prediction_length + 1):length(temp$predictions)]
+ 
+  temp_row_1 <- cbind(prod = 1, sottoarea = i, data = seq.Date(from = max(dataset$data)-prediction_length, length.out = prediction_length, by = 1), vendite = prod_1_pred)
+  temp_row_2 <- cbind(prod = 2, sottoarea = i, data = seq.Date(from = max(dataset$data)-prediction_length, length.out = prediction_length, by = 1), vendite = prod_2_pred)
+  
+  res_frame <- rbind(res_frame, temp_row_1, temp_row_2)
+  
   rfm_prediction_global <- c(rfm_prediction_global, temp$predictions)
+  c <- c + 1
 }
+
+res_frame$data <- as.numeric(as.character(res_frame$data))
+res_frame$data <- as.Date("1970-01-01", format="%Y-%m-%d") + res_frame$data
+
+
 
 # # get sse
 # rfm_sse <- (1/nrow(data_test))*sum((data_test$vendite - rfm_prediction_global)^2)
