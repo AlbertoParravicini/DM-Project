@@ -47,3 +47,11 @@ predset$primo_del_mese <- ifelse(predset$giorno_mese == 1, 1, 0)
 
 
 write.csv(predset, file="Modified data/predset_final.csv", row.names = F)
+
+# Import data
+predset <- read.csv("Modified data/predset_final.csv", stringsAsFactors=FALSE)
+predset_aziendale <- read.csv("Modified data/predizione_aziendale.csv", stringsAsFactors=FALSE)
+
+predset <- merge(predset, predset_aziendale, by = c("data", "prod"))
+
+write.csv(predset, file="Modified data/predset_complete.csv", row.names = F)
