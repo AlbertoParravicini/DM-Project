@@ -93,10 +93,10 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   
   # Need to predict the test regressors!
   if (all(is.na(regressors))) {
-    test_regressors <- pred_test_regressors(end(ts_train)+1, prediction_length = prediction_length, method = method, num_prod = num_prod)$mean
+    test_regressors <- pred_test_regressors(end(ts_train)+1, prediction_length = prediction_length, method = method, num_prod = num_prod)
     print(test_regressors)
   } else {
-    test_regressors <- regressors$mean
+    test_regressors <- regressors
   }
 
   
@@ -232,7 +232,7 @@ full_sarima_prediction <- function(train, test = NA, prediction_length = 0, deta
 
 
 evaluate_sarima_results <- function(validation, prediction) {
-  # Joim the datasets based on date and subarea
+  # Join the datasets based on date and subarea
   common_dates <- intersect(unique(validation$data), unique(prediction$data))
   common_subareas <- intersect(unique(validation$sottoarea), unique(prediction$sottoarea))
   
@@ -282,12 +282,12 @@ pred_test_regressors <- function(prediction_start, prediction_length, method = "
   print(fit)
   pred <- forecast(fit, prediction_length)
   
-  if (nrow(test_vendite)!=0) {
-    print((1/prediction_length)*sum((test_vendite$vendite - pred$mean)^2))
-  }
+  # if (nrow(test_vendite)!=0) {
+  #   print((1/prediction_length)*sum((test_vendite$vendite - pred$mean)^2))
+  # }
 
   
   print(nortestARMA(res, fit$sigma2))
 
-  return(coredata(pred))
+  return(coredata(pred)$mean)
 }

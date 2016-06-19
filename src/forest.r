@@ -85,30 +85,34 @@ summary(rfs_test)
 # Ranger random forest model builder =====================================================
 # ========================================================================================
 # ========================================================================================
-rfs <- function(train_set, test_set, num_trees = 400, details = F){
+rfs <- function(train_set, test_set, num_trees = 400, details = F, ...){
 
   prediction_length <- length(unique(test_set$data))
+  
+  train_set <- filter(train_set)
+  test_set <- filter(test_set)
+  
 
   rfs_model <- ranger(train_set,
-                       formula=vendite ~ zona + area + sottoarea  + prod + giorno_settimana +
-                        giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend +
+                       formula=vendite ~ (zona + area + sottoarea  + prod +
+                        giorno_mese + giorno_anno + settimana_anno + mese + anno  +
                         stagione + primo_del_mese + cluster3 + cluster6 + cluster20 +
-                        latitudine + longitudine + vacanza,
-                       num.trees = num_trees, importance="impurity", write.forest = T, verbose = details, num.threads = 4)
-  
-  # plot importance
-  if (details) {
-    rfs_importance <- importance(rfs_model)
-    rfs_importance_df <- data.frame(name = names(rfs_importance), rfs_importance)
-    plot <- ggplot(rfs_importance_df, aes(x = reorder(name, rfs_importance),
-                              y = rfs_importance)) +
-      geom_bar(stat='identity', colour = 'black') +
-      labs(x = 'Variables', title = 'Relative Variable Importance') +
-      coord_flip() +
-      theme_few()
-    print(plot)
-    print(rfs_model)
-  }
+                        latitudine + longitudine + giorno_settimana+weekend+vacanza),
+                       num.trees = num_trees, write.forest = T, verbose = details, num.threads = 4, ...)
+  # 
+  # # plot importance
+  # if (details) {
+  #   rfs_importance <- importance(rfs_model)
+  #   rfs_importance_df <- data.frame(name = names(rfs_importance), rfs_importance)
+  #   plot <- ggplot(rfs_importance_df, aes(x = reorder(name, rfs_importance),
+  #                             y = rfs_importance)) +
+  #     geom_bar(stat='identity', colour = 'black') +
+  #     labs(x = 'Variables', title = 'Relative Variable Importance') +
+  #     coord_flip() +
+  #     theme_few()
+  #   print(plot)
+  #   print(rfs_model)
+  # }
   
   # predict
   rfs_predict <- predict(rfs_model, test_set)
@@ -121,18 +125,18 @@ rfs <- function(train_set, test_set, num_trees = 400, details = F){
     cat("MAX APE: ", max(abs(rfs_predict$predictions - test_set$vendite)/mean(test_set$vendite)), "\n")
   }
   
-  if (details) {
-    pred_table <- data.frame(vendite=rfs_predict$predictions, data=seq.Date(from=max(train_set$data)+1, length.out = prediction_length, by = 1), type = "pred")
-
-    table_tot <- rbind(data.frame(vendite = train_set[, "vendite"], data = train_set[, "data"], type = "train"), data.frame(vendite = test_set[, "vendite"], data = test_set[, "data"], type = "test"), pred_table)
-
-    p <- ggplot(table_tot, aes(x=data, y=vendite, color = type)) +
-      coord_cartesian(xlim = c(max(train_set$data)-prediction_length, max(train_set$data)+prediction_length))
-    p <- p + geom_line(size = 1) + geom_point(size = 2) + scale_colour_colorblind()
-    p <- p + theme_economist() +xlab("Data") + ylab("Numero di vendite")
-    print(p)
-  }
-  
+  # if (details) {
+  #   pred_table <- data.frame(vendite=rfs_predict$predictions, data=seq.Date(from=max(train_set$data)+1, length.out = prediction_length, by = 1), type = "pred")
+  # 
+  #   table_tot <- rbind(data.frame(vendite = train_set[, "vendite"], data = train_set[, "data"], type = "train"), data.frame(vendite = test_set[, "vendite"], data = test_set[, "data"], type = "test"), pred_table)
+  # 
+  #   p <- ggplot(table_tot, aes(x=data, y=vendite, color = type)) +
+  #     coord_cartesian(xlim = c(max(train_set$data)-prediction_length, max(train_set$data)+prediction_length))
+  #   p <- p + geom_line(size = 1) + geom_point(size = 2) + scale_colour_colorblind()
+  #   p <- p + theme_economist() +xlab("Data") + ylab("Numero di vendite")
+  #   print(p)
+  # }
+  # 
   test_set[, "vendite"] <- rfs_predict$predictions
   return(new("forest_pred", predictions = rfs_predict$predictions, prediction_table = test_set, sse = sse))
 }
@@ -140,7 +144,7 @@ rfs <- function(train_set, test_set, num_trees = 400, details = F){
 
 
 # ============ Random Forest: Multiple models for different subareas ==============
-rfm <- function(dataset, predicion_set = NA, prediction_length = 10, num_sottoarea = 1, num_prod = 0, num_trees = 400, details = F){
+rfm <- function(dataset, predicion_set = NA, prediction_length = 10, num_sottoarea = 1, num_prod = 0, num_trees = 400, details = F, ...){
   
   # If we aren't given a prediction set, split the dataset according to the prediction length:
   # predict over the last "prediction_length" days.
@@ -203,7 +207,7 @@ rfm <- function(dataset, predicion_set = NA, prediction_length = 10, num_sottoar
                         giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend +
                         stagione + primo_del_mese + cluster3 + cluster6 + cluster20 +
                         latitudine + longitudine + vacanza,
-                      num.trees = num_trees, importance="impurity", write.forest = T, verbose = details, num.threads = 4)
+                      num.trees = num_trees, write.forest = T, verbose = details, num.threads = 4, ...)
 
   
   # predict
@@ -220,7 +224,7 @@ rfm <- function(dataset, predicion_set = NA, prediction_length = 10, num_sottoar
 }
 
 
-full_forest_prediction <- function(dataset, predicion_set = NA, prediction_length = 10, num_trees = 400, split_on_prod = T, details = F) {
+full_forest_prediction <- function(dataset, predicion_set = NA, prediction_length = 10, num_trees = 400, split_on_prod = T, details = F, ...) {
 
   # Turn some features to factors
   factorVars <- c('zona','area', "sottoarea",
@@ -249,7 +253,7 @@ full_forest_prediction <- function(dataset, predicion_set = NA, prediction_lengt
         cat("\nNUMERO PRODOTTO: ", prod_i, "\n")
       }
       cat("SOTTOAREA: ", sottoarea_i, " - Percentage: ", 100*counter/(length(unique(dataset$sottoarea))*ifelse(split_on_prod == T, 2, 1)), "%\n")
-      temp_res <- rfm(dataset = dataset, prediction_length = prediction_length, num_prod = ifelse(split_on_prod == T, prod_i, 0), num_sottoarea = sottoarea_i, num_trees = num_trees, details = T)
+      temp_res <- rfm(dataset = dataset, prediction_length = prediction_length, num_prod = ifelse(split_on_prod == T, prod_i, 0), num_sottoarea = sottoarea_i, num_trees = num_trees, details = T, ...)
       cat("PREDIZIONI: \n", temp_res@predictions, "\n")
       cat("SSE: ", temp_res@sse, "\n")
       
@@ -301,5 +305,24 @@ key_analysis <- function(k, p){
 # }
 # 
 
+
+evaluate_forest_results <- function(validation, prediction) {
+  # Join the datasets based on date and subarea
+  common_dates <- intersect(unique(validation$data), unique(prediction$data))
+  common_subareas <- intersect(unique(validation$sottoarea), unique(prediction$sottoarea))
+  
+  validation <- filter(validation, data %in% common_dates, sottoarea %in% common_subareas)
+  prediction <- filter(prediction, data %in% common_dates, sottoarea %in% common_subareas)
+  
+  validation <- validation[order(validation$prod, validation$sottoarea, validation$data), ]
+  prediction <- prediction[order(prediction$prod, prediction$sottoarea, prediction$data), ]
+  
+  mse = mse(validation$vendite, prediction$vendite)
+  ape_list = ape(validation, prediction)
+  mean_ape = meanape(validation, prediction)
+  max_ape = maxape(validation, prediction)
+  
+  return(data.frame(mse = mse, mape = mean_ape, max_ape = max_ape))
+}
 
 

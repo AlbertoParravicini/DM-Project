@@ -9,3 +9,4 @@
 	
 * Crea vendite_giorn_prod per test set a 10 giorni, non si possono usare i valori reali!
 
+* Prova formule "combinate"
