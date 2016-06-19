@@ -80,11 +80,11 @@ summary(rfs_train)
 summary(rfs_test)
 
 
-# ============================================
-# ============================================
-# Ranger random forest model builder =========
-# ============================================
-# ============================================
+# ========================================================================================
+# ========================================================================================
+# Ranger random forest model builder =====================================================
+# ========================================================================================
+# ========================================================================================
 rfs <- function(train_set, test_set, num_trees = 400, details = F){
 
   prediction_length <- length(unique(test_set$data))
@@ -136,39 +136,25 @@ rfs <- function(train_set, test_set, num_trees = 400, details = F){
   return(new("forest_pred", predictions = rfs_predict$predictions, prediction_table = test_set, sse = sse))
 }
 
-# number of trees to use
-n <- 400
 
-# get the prediction
-rfs_prediction <- rfs(rfs_train, rfs_test, details = T, num_trees = n)
 
-# # get sse
-
-rfs_sse <- (1/nrow(rfs_test))*sum((rfs_test$vendite - rfs_prediction$predictions)^2)
-print(rfs_sse)
-
-# # requires "scoring functions.R"
-# maxape(rfs_test$vendite, rfs_prediction$predictions)
-# meanape(rfs_test$vendite, rfs_prediction$predictions)
-
-# ============ Random Forest: Multiple models for different sottoareas ==============
+# ============ Random Forest: Multiple models for different subareas ==============
 rfm <- function(dataset, predicion_set = NA, prediction_length = 10, num_sottoarea = 1, num_prod = 1, num_trees = 400, details = F){
   
   # If we aren't given a prediction set, split the dataset according to the prediction length:
   # predict over the last "prediction_length" days.
   # Else, train the model using every data, then predict using the prediction_set
   if (is.na(predicion_set)) {
-    rfm_train <- filter(dataset, data <= max(data) - prediction_length, sottoarea == num_sottoarea, prod = num_prod)
-    rfm_test <- filter(dataset, data > max(data) - prediction_length, sottoarea == num_sottoarea, prod = num_prod)
+    rfm_train <- filter(dataset, data <= max(data) - prediction_length, sottoarea == num_sottoarea, prod == num_prod)
+    rfm_test <- filter(dataset, data > max(data) - prediction_length, sottoarea == num_sottoarea, prod == num_prod)
   }
   else {
-    rfm_train <- filter(dataset, sottoarea == num_sottoarea, prod = num_prod)
-    rfm_test <- filter(predicion_set, sottoarea == num_sottoarea, prod = num_prod)
+    rfm_train <- filter(dataset, sottoarea == num_sottoarea, prod == num_prod)
+    rfm_test <- filter(predicion_set, sottoarea == num_sottoarea, prod == num_prod)
     if (nrow(rfm_test) < prediction_length) {
       stop("The prediction set is too small!")
     }
   }
-  
   
   # Turn some features to factors
   factorVars <- c('zona','area', "sottoarea",
@@ -206,8 +192,13 @@ rfm <- function(dataset, predicion_set = NA, prediction_length = 10, num_sottoar
   
   # get sse
   sse <- (1/nrow(rfm_test))*sum((rfm_test$vendite - rfm_predict$predictions)^2)
-  return(new("forest_pred", prediction = rfm_predict$predictions, prediction_table = NA, sse))
+  rfm_test[, "vendite"] <- rfm_predict$predictions
+  return(new("forest_pred", predictions = rfm_predict$predictions, prediction_table = rfm_test, sse = sse))
+  
 }
+
+
+
 
 # num trees
 n <- 400
