@@ -22,7 +22,7 @@ prediction_length = 10
 # ------------------------------------------------------
 
 setwd("~/DM-Project")
-dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_cluster_tot_pred.csv", stringsAsFactors=FALSE, row.names=NULL)
+dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_with_holidays.csv.csv", stringsAsFactors=FALSE, row.names=NULL)
 # Remove the x column, if present
 dataset <- dataset[ , !(names(dataset) %in% c("X"))]
 
@@ -38,7 +38,7 @@ if (class(dataset$vendite) == "factor") {
 
 # Turn some features to factors
 factorVars <- c('zona','area', "sottoarea",
-                'prod','giorno_mese', "giorno_settimana", "giorno_anno", "mese", "settimana_anno", "anno", "weekend","stagione", "key", "azienda_chiusa", "primo_del_mese", "cluster3", "cluster6", "cluster20")
+                'prod','giorno_mese', "giorno_settimana", "giorno_anno", "mese", "settimana_anno", "anno", "weekend","stagione", "key", "azienda_chiusa", "primo_del_mese", "cluster3", "cluster6", "cluster20", "vacanza")
 
 dataset[factorVars] <- lapply(dataset[factorVars], function(x) as.factor(x))
 
@@ -51,7 +51,7 @@ summary(dataset)
 
 # Build a smaller dataset, for testing
 s_area = sample(unique(dataset$sottoarea), 1)
-data_p1 <- filter(dataset, prod == 1, sottoarea == s_area)
+data_p1 <- filter(dataset, prod == 1, sottoarea == 1)
 
 
 
@@ -231,6 +231,8 @@ points(coredata(pred_tot), col="blue")
 
 # Effective sse of the prediction
 (1/length(p1_test))*sum((coredata(p1_test) - pred_tot)^2)
+
+(1/nrow(data_test))*sum((forest_pred$predictions - data_test$vendite)^2)
 
 
 # ---------------------------------------
