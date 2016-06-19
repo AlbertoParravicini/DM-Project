@@ -13,7 +13,7 @@ source("src/scoring functions.R")
 library(stringr)
 
 setClass(Class = "forest_pred", representation(predictions = "numeric", prediction_table = "data.frame", sse = "numeric"))
-setClass(Class = "full_forest_pred_res", representation(predictions = "data.frame", sse_list = "numeric"))
+setClass(Class = "full_forest_pred", representation(predictions = "data.frame", sse_list = "numeric"))
 
 
 dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_with_holidays.csv", stringsAsFactors=FALSE, row.names=NULL)
@@ -121,17 +121,18 @@ rfs <- function(train_set, test_set, num_trees = 400, details = F){
     cat("MAX APE: ", max(abs(rfs_predict$predictions - test_set$vendite)/mean(test_set$vendite)), "\n")
   }
   
-  # if (details) {
-  #   pred_table <- data.frame(vendite=rfs_predict$predictions, data=seq.Date(from=max(train_set$data)+1, length.out = prediction_length, by = 1), type = "pred")
-  #   
-  #   table_tot <- rbind(data.frame(vendite = train_set[, "vendite"], data = train_set[, "data"], type = "train"), data.frame(vendite = test_set[, "vendite"], data = test_set[, "data"], type = "test"), pred_table)
-  #   
-  #   p <- ggplot(table_tot, aes(x=data, y=vendite, color = type)) + 
-  #     coord_cartesian(xlim = c(max(train_set$data)-prediction_length, max(train_set$data)+prediction_length))
-  #   p <- p + geom_line(size = 1) + geom_point(size = 2) + scale_colour_colorblind()
-  #   p <- p + theme_economist() +xlab("Data") + ylab("Numero di vendite") 
-  #   print(p)
-  # }
+  if (details) {
+    pred_table <- data.frame(vendite=rfs_predict$predictions, data=seq.Date(from=max(train_set$data)+1, length.out = prediction_length, by = 1), type = "pred")
+
+    table_tot <- rbind(data.frame(vendite = train_set[, "vendite"], data = train_set[, "data"], type = "train"), data.frame(vendite = test_set[, "vendite"], data = test_set[, "data"], type = "test"), pred_table)
+
+    p <- ggplot(table_tot, aes(x=data, y=vendite, color = type)) +
+      coord_cartesian(xlim = c(max(train_set$data)-prediction_length, max(train_set$data)+prediction_length))
+    p <- p + geom_line(size = 1) + geom_point(size = 2) + scale_colour_colorblind()
+    p <- p + theme_economist() +xlab("Data") + ylab("Numero di vendite")
+    print(p)
+  }
+  
   test_set[, "vendite"] <- rfs_predict$predictions
   return(new("forest_pred", predictions = rfs_predict$predictions, prediction_table = test_set, sse = sse))
 }
@@ -190,6 +191,9 @@ rfm <- function(dataset, predicion_set = NA, prediction_length = 10, num_sottoar
   # predict
   rfm_predict <- predict(rfm_model, rfm_test)
   
+  # If negative values are predicted, round them to zero.
+  rfm_predict$predictions <- ifelse(rfm_predict$predictions < 0, 0, rfm_predict$predictions)
+  
   # get sse
   sse <- (1/nrow(rfm_test))*sum((rfm_test$vendite - rfm_predict$predictions)^2)
   rfm_test[, "vendite"] <- rfm_predict$predictions
@@ -198,48 +202,56 @@ rfm <- function(dataset, predicion_set = NA, prediction_length = 10, num_sottoar
 }
 
 
+full_forest_prediction <- function(dataset, predicion_set = NA, prediction_length = 10, num_trees = 400, details = F) {
 
+  # Turn some features to factors
+  factorVars <- c('zona','area', "sottoarea",
+                  'prod','giorno_mese', "giorno_settimana", "giorno_anno", "mese", 
+                  "settimana_anno", "anno", "weekend","stagione", "key", "primo_del_mese",
+                  "azienda_chiusa", "cluster3", "cluster6", "cluster20", "vacanza")
+  
+  dataset[factorVars] <- lapply(dataset[factorVars], function(x) as.factor(x))
+  
+  # Convert dates to class "Data"
+  dataset$data <- as.Date(dataset$data, format = "%Y-%m-%d")
 
-# num trees
-n <- 400
-# predicion_length
-prediction_length <- 10
-
-# join the prediction vectors into a single vector
-rfm_prediction_global <- vector(mode="numeric", length=0)
-c = 1
-res_frame <- data.frame(matrix(NA, ncol = 4, nrow = 0))
-for(i in sort(unique(dataset$key))[1:1]){
-  cat("Current key: ", i, " - Percentage: ", 100*c/length(unique(dataset$key)), "%\n")
-  temp <- rfm(dataset = dataset, prediction_length = prediction_length, key = i, num_trees = n, details = T)
-  print(temp$predictions)
+  # Convert "vendite" to numeric values if needed
+  if (class(dataset$vendite) == "factor") {
+    dataset$vendite <- as.numeric(levels(dataset$vendite))[dataset$vendite]
+  }
   
-  prod_1_pred <- temp$predictions[1:prediction_length]
-  prod_2_pred <- temp$predictions[(prediction_length + 1):length(temp$predictions)]
- 
-  temp_row_1 <- cbind(prod = 1, sottoarea = i, data = seq.Date(from = max(dataset$data)-prediction_length, length.out = prediction_length, by = 1), vendite = prod_1_pred)
-  temp_row_2 <- cbind(prod = 2, sottoarea = i, data = seq.Date(from = max(dataset$data)-prediction_length, length.out = prediction_length, by = 1), vendite = prod_2_pred)
+  # Build a model for each product and subarea, put the results in a table
+  res_frame <- data.frame(matrix(NA, ncol = ncol(dataset), nrow = 0))
+  sse_list <- c()
   
-  res_frame <- rbind(res_frame, temp_row_1, temp_row_2)
+  counter <- 0
+  for (prod_i in 1:2) {
+    for(sottoarea_i in sort(unique(dataset$sottoarea))){
+      cat("\nNUMERO PRODOTTO: ", prod_i, "\n")
+      cat("SOTTOAREA: ", sottoarea_i, " - Percentage: ", 100*counter/(length(unique(dataset$sottoarea))*2), "%\n")
+      temp_res <- rfm(dataset = dataset, prediction_length = prediction_length, num_prod = prod_i, num_sottoarea = sottoarea_i, num_trees = num_trees, details = T)
+      cat("PREDIZIONI: \n", temp_res@predictions, "\n")
+      cat("SSE: ", temp_res@sse, "\n")
+      
+      res_frame <- rbind(res_frame, temp_res@prediction_table)
+      
+      sse_list <- c(sse_list, temp_res@sse)
+      
+      counter <- counter + 1
+    }
+  }
+  #res_frame$data <- as.numeric(as.character(res_frame$data))
+  #res_frame$data <- as.Date("1970-01-01", format="%Y-%m-%d") + res_frame$data
   
-  rfm_prediction_global <- c(rfm_prediction_global, temp$predictions)
-  c <- c + 1
+  cat("\n ------------------------ \n")
+  cat("FINAL RESULTS:\n")
+  cat("MEAN SSE: ", mean(sse_list), "\n")
+  cat("MEDIAN SSE: ", median(sse_list), "\n")
+  
+  return(new("full_forest_pred", predictions = res_frame, sse_list = sse_list))
 }
+  
 
-res_frame$data <- as.numeric(as.character(res_frame$data))
-res_frame$data <- as.Date("1970-01-01", format="%Y-%m-%d") + res_frame$data
-
-
-
-# # get sse
-# rfm_sse <- (1/nrow(data_test))*sum((data_test$vendite - rfm_prediction_global)^2)
-# 
-# print(rfm_sse)
-
-# requires "scoring functions.R"
-maxape(data_test$vendite, rfm_prediction_global)
-meanape(data_test$vendite, rfm_prediction_global)
-# ======= EXTRA
 
 # k is the key of an subarea
 # p is prediction vector (rfm_prediction_global or rfs_prediction$predictions)
