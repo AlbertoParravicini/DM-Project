@@ -140,22 +140,40 @@ rfs <- function(train_set, test_set, num_trees = 400, details = F){
 
 
 # ============ Random Forest: Multiple models for different subareas ==============
-rfm <- function(dataset, predicion_set = NA, prediction_length = 10, num_sottoarea = 1, num_prod = 1, num_trees = 400, details = F){
+rfm <- function(dataset, predicion_set = NA, prediction_length = 10, num_sottoarea = 1, num_prod = 0, num_trees = 400, details = F){
   
   # If we aren't given a prediction set, split the dataset according to the prediction length:
   # predict over the last "prediction_length" days.
   # Else, train the model using every data, then predict using the prediction_set
-  if (is.na(predicion_set)) {
-    rfm_train <- filter(dataset, data <= max(data) - prediction_length, sottoarea == num_sottoarea, prod == num_prod)
-    rfm_test <- filter(dataset, data > max(data) - prediction_length, sottoarea == num_sottoarea, prod == num_prod)
-  }
-  else {
-    rfm_train <- filter(dataset, sottoarea == num_sottoarea, prod == num_prod)
-    rfm_test <- filter(predicion_set, sottoarea == num_sottoarea, prod == num_prod)
-    if (nrow(rfm_test) < prediction_length) {
-      stop("The prediction set is too small!")
+  # If num_prod != 0, build models for single products. 
+  # If num_prod = 0, build models for multiple product and use the product as a splitting variable.
+  if (num_prod != 0) {
+    if (is.na(predicion_set)) {
+      rfm_train <- filter(dataset, data <= max(data) - prediction_length, sottoarea == num_sottoarea, prod == num_prod)
+      rfm_test <- filter(dataset, data > max(data) - prediction_length, sottoarea == num_sottoarea, prod == num_prod)
+    }
+    else {
+      rfm_train <- filter(dataset, sottoarea == num_sottoarea, prod == num_prod)
+      rfm_test <- filter(predicion_set, sottoarea == num_sottoarea, prod == num_prod)
+      if (nrow(rfm_test) < prediction_length) {
+        stop("The prediction set is too small!")
+      }
     }
   }
+  else {
+    if (is.na(predicion_set)) {
+      rfm_train <- filter(dataset, data <= max(data) - prediction_length, sottoarea == num_sottoarea)
+      rfm_test <- filter(dataset, data > max(data) - prediction_length, sottoarea == num_sottoarea)
+    }
+    else {
+      rfm_train <- filter(dataset, sottoarea == num_sottoarea)
+      rfm_test <- filter(predicion_set, sottoarea == num_sottoarea)
+      if (nrow(rfm_test) < prediction_length) {
+        stop("The prediction set is too small!")
+      }
+    }
+  }
+  
   
   # Turn some features to factors
   factorVars <- c('zona','area', "sottoarea",
@@ -202,7 +220,7 @@ rfm <- function(dataset, predicion_set = NA, prediction_length = 10, num_sottoar
 }
 
 
-full_forest_prediction <- function(dataset, predicion_set = NA, prediction_length = 10, num_trees = 400, details = F) {
+full_forest_prediction <- function(dataset, predicion_set = NA, prediction_length = 10, num_trees = 400, split_on_prod = T, details = F) {
 
   # Turn some features to factors
   factorVars <- c('zona','area', "sottoarea",
@@ -225,11 +243,13 @@ full_forest_prediction <- function(dataset, predicion_set = NA, prediction_lengt
   sse_list <- c()
   
   counter <- 0
-  for (prod_i in 1:2) {
+  for (prod_i in 1:ifelse(split_on_prod == T, 2, 1)) {
     for(sottoarea_i in sort(unique(dataset$sottoarea))){
-      cat("\nNUMERO PRODOTTO: ", prod_i, "\n")
-      cat("SOTTOAREA: ", sottoarea_i, " - Percentage: ", 100*counter/(length(unique(dataset$sottoarea))*2), "%\n")
-      temp_res <- rfm(dataset = dataset, prediction_length = prediction_length, num_prod = prod_i, num_sottoarea = sottoarea_i, num_trees = num_trees, details = T)
+      if (split_on_prod != 0) {
+        cat("\nNUMERO PRODOTTO: ", prod_i, "\n")
+      }
+      cat("SOTTOAREA: ", sottoarea_i, " - Percentage: ", 100*counter/(length(unique(dataset$sottoarea))*ifelse(split_on_prod == T, 2, 1)), "%\n")
+      temp_res <- rfm(dataset = dataset, prediction_length = prediction_length, num_prod = ifelse(split_on_prod == T, prod_i, 0), num_sottoarea = sottoarea_i, num_trees = num_trees, details = T)
       cat("PREDIZIONI: \n", temp_res@predictions, "\n")
       cat("SSE: ", temp_res@sse, "\n")
       
