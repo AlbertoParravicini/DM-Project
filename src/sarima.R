@@ -235,7 +235,7 @@ full_sarima_prediction <- function(train, test = NA, prediction_length = 0, deta
     if (all(is.na(regressors)) && use_regressors) {
       regressors <- pred_test_regressors(max(train$data)+1, prediction_length = prediction_length, num_prod = prod_i, ...)
     }
-    for (sottoarea_i in sort(unique(train$sottoarea))) {
+    for (sottoarea_i in sort(unique(train$sottoarea))[1:10]) {
       cat("sottoarea: ", sottoarea_i, "\n")
       if (all(!is.na(test))) {
         if (use_regressors) {
@@ -319,7 +319,7 @@ pred_test_regressors <- function(prediction_start, prediction_length, method = "
   
   # Try to fit the model by keeping into account the dynamic of the residuals, and predict over the test_set
   # 1 0 2 2 2 5
-  fit <- Arima(ts_vendite, c(1, 0, 2), seasonal = list(order = c(0, 0, 0), period = 7), include.mean = T, method = method)
+  fit <- Arima(ts_vendite, c(4, 0, 2), seasonal = list(order = c(2, 2, 5), period = 7), include.mean = T, method = method)
   res <- residuals(fit)
   tsdisplay(res, lag.max = 60)
   print(fit)
