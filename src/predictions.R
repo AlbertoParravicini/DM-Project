@@ -22,7 +22,7 @@ prediction_length = 10
 # ------------------------------------------------------
 
 setwd("~/DM-Project")
-dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_with_holidays.csv.csv", stringsAsFactors=FALSE, row.names=NULL)
+dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE, row.names=NULL)
 # Remove the x column, if present
 dataset <- dataset[ , !(names(dataset) %in% c("X"))]
 
@@ -38,14 +38,14 @@ if (class(dataset$vendite) == "factor") {
 
 # Turn some features to factors
 factorVars <- c('zona','area', "sottoarea",
-                'prod','giorno_mese', "giorno_settimana", "giorno_anno", "mese", "settimana_anno", "anno", "weekend","stagione", "key", "azienda_chiusa", "primo_del_mese", "cluster3", "cluster6", "cluster20", "vacanza")
+                'prod','giorno_mese', "giorno_settimana", "giorno_anno", "vendite_missing", "mese", "settimana_anno", "anno", "weekend","stagione", "key", "primo_del_mese", "cluster3", "cluster6", "cluster20", "vacanza")
 
 dataset[factorVars] <- lapply(dataset[factorVars], function(x) as.factor(x))
 
 dataset <- dataset[order(dataset$prod, dataset$zona, dataset$area, dataset$sottoarea), ]
 
-dataset <- dataset[ , !(names(dataset) %in% c("vendite_giorn_prod"))]
-colnames(dataset)[which(colnames(dataset) == 'vendite_giorn_prod.x')] <- 'vendite_giorn_prod'
+#dataset <- dataset[ , !(names(dataset) %in% c("vendite_giorn_prod"))]
+#colnames(dataset)[which(colnames(dataset) == 'vendite_giorn_prod.x')] <- 'vendite_giorn_prod'
 
 summary(dataset)
 
