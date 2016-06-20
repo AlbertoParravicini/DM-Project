@@ -20,13 +20,13 @@ setClass(Class = "xgboost_pred", representation(predictions = "numeric", predict
 setClass(Class = "full_xgboost_pred", representation(predictions = "data.frame", sse_list = "numeric"))
 
 # used to fastly rerun the algorithm
-reset <- function() {
+reset <- function(pred_length=10) {
   
   # dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_with_holidays.csv", stringsAsFactors=FALSE, row.names=NULL)
   
   dataset <- dataset_polimi_with_holidays
   
-  prediction_length <- 10
+  prediction_length <- pred_length
   
   # factorVars <- c('zona','area', "sottoarea",'prod','giorno_mese', "giorno_settimana", "giorno_anno",
   #                 "mese", "settimana_anno", "anno", "weekend","stagione", "key", "primo_del_mese",
@@ -269,3 +269,63 @@ xgboost_pred <- xg_multi(n_rounds=500,details=T, eta_value=0.025)
 # SSE:  1.969009 
 # MAPE:  0.2730418 
 # MAX APE:  3.854637 
+
+###################################################################################################
+###################################################################################################
+# ========================= ONE XGBOOST WITH CROSSVALIDATION  =================================== #
+###################################################################################################
+###################################################################################################
+# INFOS:
+# - n_rounds is the number of decision trees in the final model
+# - to do cross validation use xgb.cv instead of xgb.train an specify nfold value
+# - gradient boosting algorithm
+# - early.stop.round = X to terminate training process if performance is getting worse
+#   for X steps (e.g. X=3)
+xg_cross <- function(n_rounds=45, details=F){
+  
+  # build datasets
+  xg_train <- xgb.DMatrix(model.matrix(~ zona + area + sottoarea  + prod + giorno_settimana +
+                                         giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend+
+                                         primo_del_mese + cluster3 + cluster6 + cluster20 + 
+                                         latitudine + longitudine + vacanza, data=data_train),
+                          label=data_train$vendite, missing=NA)
+  
+  xg_test <- xgb.DMatrix(model.matrix(~zona + area + sottoarea  + prod + giorno_settimana +
+                                        giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend+
+                                        primo_del_mese + cluster3 + cluster6 + cluster20 + 
+                                        latitudine + longitudine + vacanza, data=data_test),
+                         label=data_test$vendite, missing=NA)
+  # removed stagione!  
+  
+  watchlist <- list(train=xg_train)
+  
+  # build model
+  xgb_model <- xgb.cv(data=xg_train, nrounds = n_rounds, nthread = 4, 
+                         watchlist=watchlist, eta = 0.1, nfold=5)
+  return(xgb_model)
+  # xgb_pred <- predict(xgb_model, xg_test)
+  
+  # get some scoring
+  sse <- (1/nrow(data_test))*sum((xgb_pred - data_test$vendite)^2)
+  mape <- mean(abs(xgb_pred - data_test$vendite)/mean(data_test$vendite))
+  maxape <- max(abs(xgb_pred - data_test$vendite)/mean(data_test$vendite))
+  if (details) {
+    cat("SSE: ", sse, "\n")
+    cat("MAPE: ", mape , "\n")
+    cat("MAX APE: ", maxape, "\n")
+  }  
+  
+  # if(details){
+  #   importance_matrix <- xgb.importance(model = xgb_model)
+  #   print(importance_matrix)
+  #   xgb.plot.importance(importance_matrix = importance_matrix)
+  #   
+  #   xgb.plot.tree(model = xgb_model)
+  # }
+  
+  data_test[, "vendite"] <- xgb_pred
+  return(new("xgboost_pred", predictions = xgb_pred, prediction_table = data_test, sse = sse, mape = mape, maxape = maxape))
+  
+}
+
+xgboost_pred <- xg_cross(n_rounds=5,details=T)
