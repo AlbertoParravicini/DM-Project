@@ -1,8 +1,8 @@
 library(dplyr)
 library(xgboost)
 library(ggthemes) # visualization
-source("src/scoring functions.R")
-source("src/sarima.R")
+# source("src/scoring functions.R")
+# source("src/sarima.R")
 library(stringr)
 library(xts)
 library(ggplot2)
@@ -12,25 +12,24 @@ library(PerformanceAnalytics)
 library(forecast)
 library(astsa)
 library(Metrics)
-library(Ckmeans.1d.dp)
-library(DiagrammeR)
+# library(Ckmeans.1d.dp)
+# library(DiagrammeR)
 
 setClass(Class = "xgboost_pred", representation(predictions = "numeric", prediction_table = "data.frame",
                                                 sse = "numeric", mape = "numeric", maxape="numeric"))
 setClass(Class = "full_xgboost_pred", representation(predictions = "data.frame", sse_list = "numeric"))
 
-# used to fastly rerun the algorithm
-reset <- function(pred_length=10) {
+
   
-  # dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_with_holidays.csv", stringsAsFactors=FALSE, row.names=NULL)
+  # dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE, row.names=NULL)
   
-  dataset <- dataset_polimi_with_holidays
+  dataset <- filter(dataset_polimi_final_with_holidays_v2)
   
-  prediction_length <- pred_length
+  prediction_length <- 10
   
   # factorVars <- c('zona','area', "sottoarea",'prod','giorno_mese', "giorno_settimana", "giorno_anno",
   #                 "mese", "settimana_anno", "anno", "weekend","stagione", "key", "primo_del_mese",
-  #                 "azienda_chiusa", "cluster3", "cluster6", "cluster20", "vacanza")
+  #                 "vendite_missing", "cluster3", "cluster6", "cluster20", "vacanza")
   
   
   
@@ -39,8 +38,8 @@ reset <- function(pred_length=10) {
   # Convert dates to class "Data"
   dataset$data <- as.Date(dataset$data, format = "%Y-%m-%d")
   
-  data_train <- filter(dataset, data <= max(data) - prediction_length)
-  data_test <- filter(dataset, data > max(data) - prediction_length)
+  data_train <- filter(dataset, data <= max(data) - prediction_length, sottoarea!=20)
+  data_test <- filter(dataset, data > max(data) - prediction_length, sottoarea!=20)
   
   
   data_train$data <- as.Date(data_train$data, format = "%Y-%m-%d")
@@ -56,8 +55,7 @@ reset <- function(pred_length=10) {
   if (class(data_test$vendite) == "factor") {
     data_test$vendite <- as.numeric(levels(data_test$vendite))[data_test$vendite]
   }
-}
-reset()
+
 
 
 # ########### BEGIN VENDITE GIORNALIERE PRODOTTO #########################
@@ -126,7 +124,7 @@ xg_single <- function(n_rounds=45, details=F){
   
   # build model
   xgb_model <- xgb.train(data=xg_train, nrounds = n_rounds, nthread = 4, 
-                         watchlist=watchlist, eta = 0.1)
+                         watchlist=watchlist, eta = 0.1, eval.metric="logloss", eval.metric="rmse")
   xgb_pred <- predict(xgb_model, xg_test)
 
   # get some scoring
@@ -152,7 +150,7 @@ xg_single <- function(n_rounds=45, details=F){
 
 }
 
-xgboost_pred <- xg_single(n_rounds=900,details=T)
+xgboost_pred <- xg_single(n_rounds=1500,details=T)
 
 # eta 0.2 rounds = 250
 # SSE:  2.009147 
