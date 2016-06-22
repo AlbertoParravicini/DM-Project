@@ -1,0 +1,47 @@
+---
+title: "DM-Report (to be merged)"
+author: "Simone Ripamonti"
+date: "22 giugno 2016"
+output: 
+  html_document: 
+    theme: spacelab
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+    
+* XGBOOST:
+    
+    + eXtreme Gradient Boosting is a classification and regression algorithm based on gradient boosted trees that is widely used due to some winning features:[^1]
+        + Efficiency: automatic parallel computation on a single machine and possibility to be run on a cluster
+        + Accuracy: good results for most of the data sets, even with heterogeneuos data types
+        + Feasibility: customized objective function, evaluation metrics and lots of tunable parameters
+        
+        For this reason, more than half of the winning solutions in machine learning challenges hosted at Kaggle adopt XGBoost.[^2] 
+
+    + We had the idea of trying two different approaches at modeling the dataset using XGBoost: creating one single model for the whole dataset and creating one model for each combination of subareas and products. We splitted the dataset into two different parts: one test set containing last 10 or 50 days of the available sales, and a data set containing the remaining instances.
+    + We run XGBoost's crossvalidation function to get accurate insights of the quality of the two predictive models. We tested and tuned both models by selecting different combinations of attributes and by trying different values for the parameters nrounds (number of iterations), eta (learning rate), gamma (minimum loss reduction to partition on a leaf node of the tree) and others.
+    + We used builtin XGBoost metrics root mean square error (RMSE), logarithmic loss (logloss) and mean average precision (MAE) to evaluate the quality of the model while it was building. 
+    ```
+    xgb.cv(data=xg_train, nrounds = n_rounds, nthread = 4, watchlist=list(train=xg_train), eta = 0.07,
+                          nfold=10, eval.metric=c("logloss","rmse","map"), tree_method="exact")
+    ```
+    + We used XGBoost's watchlist and evaluation metrics to keep an eye on the training and test error to perform early stopping of training technique to prevent overfitting of the test data, this helped us to improve the accuracy of the prediction on the test set.
+    ```
+    xgb_model <- xgb.train(data=xg_train, nrounds = n_rounds, nthread = 4, eta = eta_value,
+                  watchlist = list(train=xg_train, test=xg_test), early.stop.round = 5, maximize = F)
+    xgb_pred <- predict(xgb_model, xg_test)
+    ```  
+    + Once the prediction was ready we applied also mean absolute percentage error (MAPE[^3]) and max absolute percentage error. These metrics helped us to understand that the single model was performing slightly better than the multiple one, so we decided to focus our efforts on the former.
+    + Features and parameters for the final model:
+        + features: *zona, area, sottoarea, prod, giorno_settimana, giorno_mese, giorno_anno, settimana_anno, mese, anno, weekend, primo_del_mese, vacanza, stagione, cluster3, cluster6, cluster20, latitudine, longitudine*
+        + label: vendite
+        + nrounds: 700
+        + eta: 0.07
+        + gamma: default
+
+[^1]: http://www.slideshare.net/ShangxuanZhang/xgboost
+[^2]: http://www.kdnuggets.com/2016/03/xgboost-implementing-winningest-kaggle-algorithm-spark-flink.html
+[^3]: https://en.wikipedia.org/wiki/Mean_absolute_percentage_error#Alternative_MAPE_definitions
