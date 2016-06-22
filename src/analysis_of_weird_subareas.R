@@ -10,7 +10,7 @@ library(normwhn.test)
 library(nortest)
 library(nortestARMA)
 
-dataset_polimi <- read.csv("/Original data/dataset_polimi.csv", stringsAsFactors=FALSE)
+dataset_polimi <- read.csv("../Original data/dataset_polimi.csv", stringsAsFactors=FALSE)
 
 dataset_polimi$data <- as.Date(as.character(dataset_polimi$Data),format="%Y-%m-%d")
 

@@ -1,0 +1,36 @@
+---
+title: "DM-Report"
+author: "Alberto Parravicini"
+date: "22 giugno 2016"
+output: 
+  html_document: 
+    theme: spacelab
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("~/DM-Project")
+```
+
+* DATA EXPLORATION:
+    This section contains the preliminary operations we performed on the dataset: data visualization, outlier identification, and in general anything that could help us to better understand the dataset and the information it contains.
+    + Un paio di plot: boxplot sulle vendite nei vari mesi, plot andamento vendite complessive giorno per giorno, grafici distribuzione di vendita mese/prodotto/giornosettimana, un paio di timeseries dentro
+
+    + Initial exploratory analysis: we identified the **distribution of sales** (cumulative or divided by product) across areas, days of the week, months, years. 
+    Tuples in the dataset are uniquely denoted by the key "Product, Subarea, Date".
+    + Outlier and missing values: the dataset doesn't explicitely contains missing values (i.e. NA or similar values). There is however of missing subarea (51) and a number of outliers; as areas are mapped to an arbitrary number of subareas (and each subarea is mapped to exactly one area), there is no reason to believe that the missing subarea should negatively affect other predictions. 
+    On the other hands, the extremely high sales values at *"30/6/2014"*, and the lack of sales over the period from *"2014-03-19"* to *"2014-03-25"* can be considered outliers and missing values: indeed, these events seems to be purely random and not correlated to any subsequent behaviour of the sales. We decided to replace these values with a prediction (see "Data preparation" for further details regarding the metodology).
+    + A number of subareas displays unusual sales behaviours: subarea 20, and subareas 32 and 78 (relatively to product 2) have mostly no sales. We then decided to inspect the time-series of subareas and of the other subareas, to understand if they displayed a predictable internal structure or if they resembled white noise. The **Box-Pierce** test statistic examines if a univariate time-series is composed of independent observations: this is the case of white noise or of constant signals, whose best predictor is the mean of the signal itself.
+    The null hypothesis of the Box-Pierce test is that the signal is made of independent observations: a low p-value implies that this isn't the case, and the signal has a more complex internal structure.
+    ```
+    # Box-Pierce test for subarea 20, product 1
+    dataset_polimi <- read.csv("Original data/dataset_polimi.csv", stringsAsFactors=FALSE)
+    subarea_20_p1 <- filter(dataset_polimi, Sottoarea == "Sottoarea_20", Categoria_prodotto == "Prodotto_1")
+    tsdisplay(subarea_20_p1$Vendite, lag.max = 100, main = "Analysis of subarea 20 - Product 1")
+    Box.test(subarea_20_p1$Vendite)
+    # Box-Pierce test for subarea 22, product 1, for comparison (this timeseries has a complex structure)
+    Box.test(filter(dataset_polimi, Sottoarea == "Sottoarea_22", Categoria_prodotto == "Prodotto_1")$Vendite)
+    ```
+    Subarea 20, and subareas 32 and 78 (relatively to product 2) can indeed be considered deterministic signals with mean 0: using  the tuples referring these time-series in the training would not be beneficial, so we removed them from the dataset, and predicted sales equal to 0 a-posteriori.
+    
+* DATA PREPARATION:

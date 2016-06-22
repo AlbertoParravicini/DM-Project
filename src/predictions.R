@@ -22,7 +22,7 @@ prediction_length = 10
 # ------------------------------------------------------
 
 
-dataset <- read.csv("Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE, row.names=NULL)
+dataset <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE, row.names=NULL)
 # Remove the x column, if present
 dataset <- dataset[ , !(names(dataset) %in% c("X"))]
 
