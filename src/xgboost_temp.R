@@ -32,8 +32,11 @@ setClass(Class = "full_xgboost_pred", representation(predictions = "data.frame",
   # dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_with_holidays.csv", stringsAsFactors=FALSE, row.names=NULL)
   
   dataset <- dataset_polimi_final_with_holidays_v2
-  dataset_bak <- dataset
-  
+  dataset$stagione[dataset$stagione=="inverno"] <- 1
+  dataset$stagione[dataset$stagione=="primavera"] <- 2
+  dataset$stagione[dataset$stagione=="estate"] <- 3
+  dataset$stagione[dataset$stagione=="autunno"] <- 4
+  dataset$stagione <- as.numeric(dataset$stagione)
   prediction_length <- 10
   
   # factorVars <- c('zona','area', "sottoarea",'prod','giorno_mese', "giorno_settimana", "giorno_anno",
@@ -136,12 +139,12 @@ xg_single <- function(n_rounds=45, details=F){
   xg_train <- xgb.DMatrix(model.matrix(~ zona + area + sottoarea  + prod + giorno_settimana +
                                          giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend 
                                           + primo_del_mese + cluster3 + cluster6 + cluster20 + 
-                                         latitudine + longitudine + vacanza, data=data_train),
+                                         latitudine + longitudine + vacanza + stagione, data=data_train),
                           label=data_train$vendite, missing=NA)
   xg_test <- xgb.DMatrix(model.matrix(~zona + area + sottoarea  + prod + giorno_settimana +
                                         giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend 
                                          + primo_del_mese + cluster3 + cluster6 + cluster20 + 
-                                        latitudine + longitudine + vacanza, data=data_test),
+                                        latitudine + longitudine + vacanza + stagione, data=data_test),
                          label=data_test$vendite, missing=NA)
   # removed stagione!  
   
@@ -149,7 +152,7 @@ xg_single <- function(n_rounds=45, details=F){
   
   # build model
   xgb_model <- xgb.train(data=xg_train, nrounds = n_rounds, nthread = 4, 
-                         watchlist=watchlist, eta = 0.07)
+                         watchlist=watchlist, eta = 0.07, eval.metric="logloss", eval.metric="rmse")
   xgb_pred <- predict(xgb_model, xg_test)
 
   # get some scoring
@@ -161,6 +164,7 @@ xg_single <- function(n_rounds=45, details=F){
     cat("SSE: ", sse, "\n")
     cat("MAPE: ", mape , "\n")
     cat("MAX APE: ", maxape, "\n")
+    cat("LOGLOSS: ", logloss, "\n")
   }  
   
   # if(details){
@@ -176,7 +180,7 @@ xg_single <- function(n_rounds=45, details=F){
 
 }
 
-xgboost_pred <- xg_single(n_rounds=867,details=T)
+xgboost_pred <- xg_single(n_rounds=700,details=T)
 
 # eta 0.2 rounds = 250
 # SSE:  2.009147 
@@ -311,13 +315,13 @@ xg_cross <- function(n_rounds=45, details=F){
   xg_train <- xgb.DMatrix(model.matrix(~ zona + area + sottoarea  + prod + giorno_settimana +
                                          giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend+
                                          primo_del_mese + cluster3 + cluster6 + cluster20 + 
-                                         latitudine + longitudine + vacanza, data=data_train),
+                                         latitudine + longitudine + vacanza + stagione, data=data_train),
                           label=data_train$vendite, missing=NA)
   
   xg_test <- xgb.DMatrix(model.matrix(~zona + area + sottoarea  + prod + giorno_settimana +
                                         giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend+
                                         primo_del_mese + cluster3 + cluster6 + cluster20 + 
-                                        latitudine + longitudine + vacanza, data=data_test),
+                                        latitudine + longitudine + vacanza + stagione, data=data_test),
                          label=data_test$vendite, missing=NA)
   # removed stagione!  
   
@@ -325,7 +329,9 @@ xg_cross <- function(n_rounds=45, details=F){
   
   # build model
   xgb_model <- xgb.cv(data=xg_train, nrounds = n_rounds, nthread = 4, 
-                         watchlist=watchlist, eta = 0.1, nfold=5)
+                         watchlist=watchlist, eta = 0.07, nfold=10,
+                      eval.metric="logloss", eval.metric="rmse", eval.metric="map", 
+                      tree_method="exact")
   return(xgb_model)
   # xgb_pred <- predict(xgb_model, xg_test)
   
@@ -352,7 +358,7 @@ xg_cross <- function(n_rounds=45, details=F){
   
 }
 
-xgboost_pred <- xg_cross(n_rounds=5,details=T)
+xgboost_pred <- xg_cross(n_rounds=700,details=T)
 
 aggiungi_sottoarea_prodotto <- function(dataset, sottoarea, prodotto, valore=0){
   temp <- filter(dataset, sottoarea==dataset[1,"sottoarea"], prod==dataset[1,"prod"])
@@ -381,11 +387,31 @@ data_test_2 <- arrange(data_test_2, prod, sottoarea, data)
 sse <- (1/nrow(data_test_2))*sum((hardcoded_test$vendite - data_test_2$vendite)^2)
 mape <- mean(abs(hardcoded_test$vendite - data_test_2$vendite)/mean(data_test_2$vendite))
 maxape <- max(abs(hardcoded_test$vendite - data_test_2$vendite)/mean(data_test_2$vendite))
-
+logloss <- LogLoss(data_test_2$vendite, hardcoded_test$vendite)
+  
   cat("SSE: ", sse, "\n")
   cat("MAPE: ", mape , "\n")
   cat("MAX APE: ", maxape, "\n")
-  
-  
+  cat("LOGLOSS: ", logloss, "\n")
 
- 
+  
+#======================== STATISTICHE XGBOOST
+  results <- data.frame(matrix(NA, ncol=6, nrow=0))
+  
+  prediction <- xgboost_pred@prediction_table
+  for (s in unique(prediction$sottoarea)){
+    local_test <- filter(data_test, sottoarea==s)
+    local_pred <- filter(prediction, sottoarea==s)
+    for (p in unique(local_test$prod)){
+      sse <- (1/nrow(filter(local_test, prod==p))*sum((filter(local_pred, prod==p)$vendite - filter(local_test, prod==p)$vendite)^2))
+      mape <- mean(abs(filter(local_pred, prod==p)$vendite - filter(local_test, prod==p)$vendite)/mean(filter(local_test, prod==p)$vendite))
+      maxape <- max(abs(filter(local_pred, prod==p)$vendite - filter(local_test, prod==p)$vendite)/mean(filter(local_test, prod==p)$vendite))
+      logloss <- LogLoss(filter(local_test, prod==p)$vendite, filter(filter(local_pred, prod==p), prod==p)$vendite)
+      
+      temp_row <- data.frame(sottoarea=s, prod=p, sse=sse, mape=mape, maxape=maxape, logloss=logloss )
+      results <- rbind(results, temp_row)
+    }
+  }
+
+  write.csv(results, file="Modified data/risultati_xgboost_no[20(1-2),78(2),32(2)].csv", row.names=FALSE)
+  
