@@ -20,44 +20,41 @@ setClass(Class = "xgboost_pred", representation(predictions = "numeric", predict
 setClass(Class = "full_xgboost_pred", representation(predictions = "data.frame", sse_list = "numeric"))
 
 # used to fastly rerun the algorithm
-reset <- function(pred_length=10) {
+dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE, row.names=NULL)
   
-  # dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_with_holidays.csv", stringsAsFactors=FALSE, row.names=NULL)
+#dataset <- dataset_polimi_with_holidays
   
-  dataset <- dataset_polimi_with_holidays
+prediction_length <- 10
   
-  prediction_length <- pred_length
-  
-  # factorVars <- c('zona','area', "sottoarea",'prod','giorno_mese', "giorno_settimana", "giorno_anno",
-  #                 "mese", "settimana_anno", "anno", "weekend","stagione", "key", "primo_del_mese",
-  #                 "azienda_chiusa", "cluster3", "cluster6", "cluster20", "vacanza")
+factorVars <- c('zona','area', "sottoarea",'prod','giorno_mese', "giorno_settimana", "giorno_anno",
+                "mese", "settimana_anno", "anno", "weekend","stagione", "key", "primo_del_mese",
+                "vendite_missing", "cluster3", "cluster6", "cluster20", "vacanza")
   
   
   
-  # dataset[factorVars] <- lapply(dataset[factorVars], function(x) as.factor(x))
+dataset[factorVars] <- lapply(dataset[factorVars], function(x) as.factor(x))
   
-  # Convert dates to class "Data"
-  dataset$data <- as.Date(dataset$data, format = "%Y-%m-%d")
+# Convert dates to class "Data"
+dataset$data <- as.Date(dataset$data, format = "%Y-%m-%d")
   
-  data_train <- filter(dataset, data <= max(data) - prediction_length)
-  data_test <- filter(dataset, data > max(data) - prediction_length)
+data_train <- filter(dataset, data <= max(data) - prediction_length)
+data_test <- filter(dataset, data > max(data) - prediction_length)
   
   
-  data_train$data <- as.Date(data_train$data, format = "%Y-%m-%d")
-  data_test$data <- as.Date(data_test$data, format = "%Y-%m-%d")
+data_train$data <- as.Date(data_train$data, format = "%Y-%m-%d")
+data_test$data <- as.Date(data_test$data, format = "%Y-%m-%d")
   
-  # Convert "vendite" to numeric values if needed
-  if (class(dataset$vendite) == "factor") {
-    dataset$vendite <- as.numeric(levels(dataset$vendite))[dataset$vendite]
-  }
-  if (class(data_train$vendite) == "factor") {
-    data_train$vendite <- as.numeric(levels(data_train$vendite))[data_train$vendite]
-  }
-  if (class(data_test$vendite) == "factor") {
-    data_test$vendite <- as.numeric(levels(data_test$vendite))[data_test$vendite]
-  }
+# Convert "vendite" to numeric values if needed
+if (class(dataset$vendite) == "factor") {
+  dataset$vendite <- as.numeric(levels(dataset$vendite))[dataset$vendite]
 }
-reset()
+if (class(data_train$vendite) == "factor") {
+  data_train$vendite <- as.numeric(levels(data_train$vendite))[data_train$vendite]
+}
+if (class(data_test$vendite) == "factor") {
+  data_test$vendite <- as.numeric(levels(data_test$vendite))[data_test$vendite]
+}
+
 
 
 # ########### BEGIN VENDITE GIORNALIERE PRODOTTO #########################
@@ -126,8 +123,10 @@ xg_single <- function(n_rounds=45, details=F){
   
   # build model
   xgb_model <- xgb.train(data=xg_train, nrounds = n_rounds, nthread = 4, 
-                         watchlist=watchlist, eta = 0.1)
+                         watchlist=watchlist, eta = 0.1, verbose = T)
   xgb_pred <- predict(xgb_model, xg_test)
+  
+  xgb.plot.tree(model = xgb_model)
 
   # get some scoring
   sse <- (1/nrow(data_test))*sum((xgb_pred - data_test$vendite)^2)
@@ -301,7 +300,7 @@ xg_cross <- function(n_rounds=45, details=F){
   
   # build model
   xgb_model <- xgb.cv(data=xg_train, nrounds = n_rounds, nthread = 4, 
-                         watchlist=watchlist, eta = 0.1, nfold=5)
+                         watchlist=watchlist, eta = 0.1, nfold=5, showsd = T, metrics = list("logloss", "rmse"))
   return(xgb_model)
   # xgb_pred <- predict(xgb_model, xg_test)
   
