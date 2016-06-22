@@ -2,10 +2,11 @@
 title: "DM-Report"
 author: "Alberto Parravicini"
 date: "22 giugno 2016"
-output: 
-   
+output:
   html_document: 
     theme: spacelab
+runtime: shiny
+
 ---
 
 ```{r setup, include=FALSE}
@@ -53,7 +54,32 @@ Box.test(subarea_20_p1$Vendite)
 ```{r echo=F, tidy = T, comment = "#", collapse=T}
 paste("Box-Pierce test for subarea 22, product 1, for comparison (this timeseries has a complex structure)")
 Box.test(filter(dataset_polimi, Sottoarea == "Sottoarea_22", Categoria_prodotto == "Prodotto_1")$Vendite)
-tsdisplay(subarea_20_p1$Vendite, lag.max = 100, main = "Analysis of subarea 20 - Product 1")
+
+```
+---
+runtime: shiny
+output: html_document
+---
+### Analyze the time-series!
+
+```{r echo = FALSE}
+dataset_polimi <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
+
+```
+```{r echo=F, tidy = T, comment = "#", collapse=T}
+selectInput("prodotto", label = "Select a product:",
+              choices = c(1, 2), selected = 1)
+  
+sliderInput("sottoarea", label = "Select a subarea:",
+              min = 1, max = length(unique(dataset_polimi$sottoarea)), value = 20, step = 1)
+```
+
+```{r echo = FALSE}
+renderPlot({
+  selected <- filter(dataset_polimi, sottoarea == input$sottoarea, prod == input$prodotto)
+  
+  tsdisplay(selected$vendite)
+})
 ```
 
 
@@ -102,8 +128,14 @@ The values replaced are the ones at *"2014-01-01"*, *"30/6/2014"*, and from *"20
 ## MODEL BUILDING:
 
 ### Seasonal ARIMA: 
-Our first approach to the prediction of sales was to use **Seasonal ARIMA** models (Seasonal Auto-Regressive Integrated Moving Average): these models are in general capable of fitting the structure of very complex time series, even those with seasonalities or trends like in our case. Furthermore, finding the right order of a *Seasonal ARIMA* is something that can be done (with a certain degree of approximation) by applying mathematical and statistical analysis to the time-series themselves.  
+Our first approach to the prediction of sales was to use **Seasonal ARIMA** models (Seasonal Auto-Regressive Integrated Moving Average, or **Sarima**): these models are in general capable of fitting the structure of very complex time series, even those with seasonalities or trends like in our case. Furthermore, finding the right order of a *Seasonal ARIMA* is something that can be done (with a certain degree of approximation) by applying mathematical and statistical analysis to the time-series themselves.  
+
+We built a different *Seasonal ARIMA* for each subarea and product, under the assumption that all the time-series could be fitted with a model of the same order (but different parameter values, of course). This hypothesis seems to be true for the majority of cases, with a few exceptions where the other models we built (with Random Forest and XGBoost) outperforms Sarima by a wide margin.
+
+It is interesting to note that *Seasonal ARIMA* uses only the values of the time-series itself for its forecast: it doesn't use any other feature, and every subarea/product combination is completely independent from the others. Despite these strong limitations, *Sarima* managed to perform almost as well as the other models, and in some cases even better (see the specific section for results).
+
 As an example, **Auto-correlation**, **Partial auto-correlation**, to understand the  **MA** and **AR** orders, or the **Neyman Smooth Tests of Normality** to check if the residuals of the training can be considered **white noise**.
+
 
 
 ```{r echo=F, tidy = T, comment = "#", collapse=T, fig.align="center"}
@@ -126,6 +158,9 @@ test$data <- as.Date(as.character(test$data),format="%Y-%m-%d")
 filtered_data <- filter(dataset, prod == 1, sottoarea == 1)
 train_length <- length(unique(train$data))
 ts_full <- zoo(filtered_data$vendite, order.by = filtered_data$data)
+
+tsdisplay(ts_full)
+
 ts_train <- ts_full[1:train_length]
 ts_test <- ts_full[(train_length+1):(prediction_length+train_length)]
 
@@ -147,4 +182,23 @@ print(p)
 
 ```
         
-       
+From a simple inspection of the *autocorrelation function*, we can see how the time-series has a clear weekly seasonality.  
+After various trials, by making use of metrics such as the *mean squared error*, the *AIC*[^1], and the estimated variance of the parameters, we opted for a (1, 1, 1)(1, 1, 1)_7 model.  
+However, the analysis of the residuals showed some traces of a remaining seasonality, of different latency. We then added a second *Seasonal ARIMA*, of order (0, 0, 0)(1, 1, 1)_6, to model the residual of the first model, and a third *Seasonal ARIMA*, of order (0, 0, 0)(1, 1, 0)_5, to fit the residuals of the second.  
+The overall prediction is the sum of the predictions of the three models.
+The residuals of this stacked *Seasonal ARIMA* can be considered white noise (low p-value: very likely to be white noise).
+
+    nortestARMA(res_tot, fit$sigma2)
+    #$pvalsdmuest
+    #[1] 4.927925e-06
+
+We also used the overall sales of the company, aggregated on a daily basis, as exogen input of the model: this lead to a slight improvement of the quality of the model, with respect to all the metric considered.
+
+R offers to methods to optimize the *Seasonal ARIMA* models: **CSS-ML** usually offers better results, but sometimes it fails to converge; **CSS**, doesn't have this problem, but it is in general less precise. We used the former to predict the aggregated sales, and the latter for the single subareas. 
+
+
+### Random Forest
+
+
+
+[^1]: http://www4.ncsu.edu/~shu3/Presentation/AIC.pdf
