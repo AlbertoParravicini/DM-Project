@@ -1,4 +1,4 @@
-"sottoarea","data","prod","zona","area","key","latitudine","longitudine","giorno_mese","giorno_sett","giorno_anno","mese","settimana_anno","anno","weekend","vacanza","stagione","primo_del_mese","vendite_giorn_prod","cluster3","cluster6","cluster20"
+"sottoarea","data","prod","zona","area","key","latitudine","longitudine","giorno_mese","giorno_settimana","giorno_anno","mese","settimana_anno","anno","weekend","vacanza","stagione","primo_del_mese","vendite_giorn_prod","cluster3","cluster6","cluster20"
 1,"2016-05-21",1,21,57,"21-57-1",37.5725143333333,14.2033541176471,21,6,142,5,21,2016,1,0,"primavera",0,259.145863947976,3,6,17
 1,"2016-05-22",1,21,57,"21-57-1",37.5725143333333,14.2033541176471,22,7,143,5,21,2016,1,0,"primavera",0,0,3,6,17
 1,"2016-05-23",1,21,57,"21-57-1",37.5725143333333,14.2033541176471,23,1,144,5,21,2016,0,0,"primavera",0,780.155965499916,3,6,17

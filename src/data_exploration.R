@@ -12,8 +12,8 @@ library(Metrics)
 # ------------------------------------------------------
 # ------------------------------------------------------
 
-setwd("~/DM-Project")
-dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi.csv", stringsAsFactors=FALSE, row.names=NULL)
+
+dataset <- read.csv("Modified data/dataset_polimi.csv", stringsAsFactors=FALSE, row.names=NULL)
 # Remove the x column, if present
 dataset <- dataset[ , !(names(dataset) %in% c("X"))]
 
@@ -90,7 +90,7 @@ for (i in 1:7) {
 # Not by a wide margin, but their number is still above average
 
 par(mfrow = c(1,1))
-vendite_giornaliere_prod <- read.csv("~/DM-Project/Modified data/vendite_giornaliere_prod.csv", row.names=NULL, stringsAsFactors=FALSE)
+vendite_giornaliere_prod <- read.csv("Modified data/vendite_giornaliere_prod.csv", row.names=NULL, stringsAsFactors=FALSE)
 
 ccf(diff(filter(vendite_giornaliere_prod, prod == 1)$vendite, 7), diff(filter(vendite_giornaliere_prod, prod == 2)$vendite, 7), lag.max = 200)
 acf(diff(diff(filter(vendite_giornaliere_prod, prod == 1)$vendite, 7), 20), lag.max = 100)

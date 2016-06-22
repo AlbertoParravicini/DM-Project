@@ -1,6 +1,6 @@
 library(dplyr)
 
-dataset <- read.csv("~/DM-Project/dataset_polimi.csv", stringsAsFactors=FALSE, row.names=NULL)
+dataset <- read.csv("/dataset_polimi.csv", stringsAsFactors=FALSE, row.names=NULL)
 # need to have run "data preparation.R" & "data preparation2.R" on this dataset!
 
 # =========== CUMULATIVE SUM OF THE YEAR =============================

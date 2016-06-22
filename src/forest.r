@@ -16,7 +16,8 @@ setClass(Class = "forest_pred", representation(predictions = "numeric", predicti
 setClass(Class = "full_forest_pred", representation(predictions = "data.frame", sse_list = "numeric"))
 
 
-dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE, row.names=NULL)
+dataset <- read.csv("Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE, row.names=NULL)
+
 
 # dataset <- dataset_complete
 

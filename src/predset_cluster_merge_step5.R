@@ -17,4 +17,8 @@ clusters <- unique(clusters)
 
 predset <- merge(predset, clusters, by = c("sottoarea"))
 
+
+# Rinomina atributo
+colnames(predset)[which(colnames(predset) == 'giorno_sett')] <- 'giorno_settimana'
+
 write.csv(predset, file="Modified data/predset_complete_with_clusters.csv", row.names = F)

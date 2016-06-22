@@ -16,8 +16,8 @@ prediction_length = 10
 # ------------------------------------------------------
 # ------------------------------------------------------
 
-setwd("~/DM-Project")
-dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_clusterized.csv", stringsAsFactors=FALSE, row.names=NULL)
+
+dataset <- read.csv("Modified data/dataset_polimi_clusterized.csv", stringsAsFactors=FALSE, row.names=NULL)
 # Remove the x column, if present
 dataset <- dataset[ , !(names(dataset) %in% c("X"))]
 
@@ -38,7 +38,7 @@ dataset[factorVars] <- lapply(dataset[factorVars], function(x) as.factor(x))
 summary(dataset)
 
 # Use the exogen signal of the overall sales
-vendite_giornaliere_prod <- read.csv("~/DM-Project/Modified data/vendite_giornaliere_prod.csv", row.names=NULL, stringsAsFactors=FALSE)
+vendite_giornaliere_prod <- read.csv("Modified data/vendite_giornaliere_prod.csv", row.names=NULL, stringsAsFactors=FALSE)
 vendite_giornaliere_prod$prod <- as.factor(vendite_giornaliere_prod$prod)
 
 # Turn dates to "Date" class
