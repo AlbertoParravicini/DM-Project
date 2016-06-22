@@ -10,8 +10,65 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
+* CLUSTERING
+    + Once we were provided the gps coordinates of each subarea, we plotted their latitude and longitute on a map, grouping them by zone and giving each zone a different color
+    ```
+    library(rworldmap)
+    library(dplyr)
+    map <- getMap(resolution = "low")
+    plot(map, xlim = c(-10, 30), ylim = c(40, 50), asp = 1)
+    for (i in 1:unique(dataset_polimi_complete$zona)){
+      for (s in unique(filter(dataset_polimi_complete, zona==i)$sottoarea)){
+            temp <- filter(dataset_polimi_complete, sottoarea==s)
+            points(temp$longitudine[1], temp$latitudine[1], col=i, asp=1)
+      }
+    }
+    ```
+    + Then we decided to perform a Knee-Elbow analysis to understand how the subareas could be grouped together in a different way than the one provided by zones and areas. First of all we built a hierarchical clustering
     
+        ```
+        library(GMD)
+        # init the seed to be able to repeat the experiment
+        set.seed(1234)
+        # build the distance matrix
+        x<-unique(gps$LATITUDINE)
+        y<-unique(gps$LONGITUDINE)
+        d <- data.frame(x,y)
+        dm <- dist(d)
+        # generate the hierarchical clustering
+        cl <- hclust(dm)
+        ```
+    
+    + Given the hierarchical clustering result, we plotted WSS and BSS errors
+    
+        ```
+        # number of clusters to use in the plot
+        plot_points <- 30
+        plot_wss = rep(0,plot_points)
+        plot_bss = rep(0,plot_points)
+        # evaluate every clustering
+        for(i in 1:plot_points)
+        {
+          clusters <- cutree(cl,i)
+          eval <- css(dm,clusters);
+          plot_wss[i] <- eval$totwss
+          plot_bss[i] <- eval$totbss
+        }
+        # plot the results
+        x = 1:plot_points
+        plot(x, y=plot_bss, main="Between Cluster Sum-of-square",
+             cex=2, pch=18, col="blue", xlab="Number of Clusters",
+             ylab="Evaluation")
+        lines(x, plot_bss, col="blue")
+        par(new=TRUE)
+        plot(x, y=plot_wss, cex=2, pch=19, col="red", ylab="", xlab="")
+        lines(x,plot_wss, col="red")
+        ```
+    + Then we decided to group subareas according to three different k-means runs:
+        * 3 cluster grouping, in order to distinguish between North, Center and South Italy
+        * 6 cluster grouping, according to the value suggested by the Knee-Elbow analysis
+        * 20 cluster grouping, in order to distiguish the different Italian regions
+
 * XGBOOST:
     
     + eXtreme Gradient Boosting is a classification and regression algorithm based on gradient boosted trees that is widely used due to some winning features:[^1]
