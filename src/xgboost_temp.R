@@ -15,11 +15,20 @@ library(Metrics)
 library(Ckmeans.1d.dp)
 library(DiagrammeR)
 
+LogLoss<-function(actual, predicted)
+{
+  predicted<-(pmax(predicted, 0.00001))
+  predicted<-(pmin(predicted, 0.99999))
+  result<- -1/length(actual)*(sum((actual*log(predicted)+(1-actual)*log(1-predicted))))
+  return(result)
+}
+
 setClass(Class = "xgboost_pred", representation(predictions = "numeric", prediction_table = "data.frame",
                                                 sse = "numeric", mape = "numeric", maxape="numeric"))
 setClass(Class = "full_xgboost_pred", representation(predictions = "data.frame", sse_list = "numeric"))
 
 # used to fastly rerun the algorithm
+<<<<<<< HEAD
 dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE, row.names=NULL)
   
 #dataset <- dataset_polimi_with_holidays
@@ -29,6 +38,18 @@ prediction_length <- 10
 factorVars <- c('zona','area', "sottoarea",'prod','giorno_mese', "giorno_settimana", "giorno_anno",
                 "mese", "settimana_anno", "anno", "weekend","stagione", "key", "primo_del_mese",
                 "vendite_missing", "cluster3", "cluster6", "cluster20", "vacanza")
+=======
+
+  # dataset <- read.csv("Modified data/dataset_polimi_with_holidays.csv", stringsAsFactors=FALSE, row.names=NULL)
+  
+  dataset <- dataset_polimi_final_with_holidays_v2
+  dataset$stagione[dataset$stagione=="inverno"] <- 1
+  dataset$stagione[dataset$stagione=="primavera"] <- 2
+  dataset$stagione[dataset$stagione=="estate"] <- 3
+  dataset$stagione[dataset$stagione=="autunno"] <- 4
+  dataset$stagione <- as.numeric(dataset$stagione)
+  prediction_length <- 10
+>>>>>>> cbd33419152926abbf1fcb145f0dd8f553c4bb9d
   
   
   
@@ -37,13 +58,35 @@ dataset[factorVars] <- lapply(dataset[factorVars], function(x) as.factor(x))
 # Convert dates to class "Data"
 dataset$data <- as.Date(dataset$data, format = "%Y-%m-%d")
   
+<<<<<<< HEAD
 data_train <- filter(dataset, data <= max(data) - prediction_length)
 data_test <- filter(dataset, data > max(data) - prediction_length)
+=======
+# TOGLI DAL DATASET SOTTOAREE+PROD DA NON PREDIRRE
+
+  # remove sottoarea 20
+  dataset <- filter(dataset, sottoarea!=20)
+  # remove sottoarea 78 prodotto 2
+  temp <- filter(dataset, sottoarea==78, prod==1)
+  dataset <- filter(dataset, sottoarea!=78)
+  dataset <- rbind(dataset, temp)
+  # remove sottoarea 30 prodotto 2
+  temp <- filter(dataset, sottoarea==32, prod==1)
+  dataset <- filter(dataset, sottoarea!=32)
+  dataset <- rbind(dataset, temp)
+  
+  
+  
+
+  # Convert dates to class "Data"
+  dataset$data <- as.Date(dataset$data, format = "%Y-%m-%d")
+>>>>>>> cbd33419152926abbf1fcb145f0dd8f553c4bb9d
   
   
 data_train$data <- as.Date(data_train$data, format = "%Y-%m-%d")
 data_test$data <- as.Date(data_test$data, format = "%Y-%m-%d")
   
+<<<<<<< HEAD
 # Convert "vendite" to numeric values if needed
 if (class(dataset$vendite) == "factor") {
   dataset$vendite <- as.numeric(levels(dataset$vendite))[dataset$vendite]
@@ -54,6 +97,21 @@ if (class(data_train$vendite) == "factor") {
 if (class(data_test$vendite) == "factor") {
   data_test$vendite <- as.numeric(levels(data_test$vendite))[data_test$vendite]
 }
+=======
+  data_train$data <- as.Date(data_train$data, format = "%Y-%m-%d")
+  data_test$data <- as.Date(data_test$data, format = "%Y-%m-%d")
+  
+  # Convert "vendite" to numeric values if needed
+  if (class(dataset$vendite) == "factor") {
+    dataset$vendite <- as.numeric(levels(dataset$vendite))[dataset$vendite]
+  }
+  if (class(data_train$vendite) == "factor") {
+    data_train$vendite <- as.numeric(levels(data_train$vendite))[data_train$vendite]
+  }
+  if (class(data_test$vendite) == "factor") {
+    data_test$vendite <- as.numeric(levels(data_test$vendite))[data_test$vendite]
+  }
+>>>>>>> cbd33419152926abbf1fcb145f0dd8f553c4bb9d
 
 
 
@@ -110,12 +168,12 @@ xg_single <- function(n_rounds=45, details=F){
   xg_train <- xgb.DMatrix(model.matrix(~ zona + area + sottoarea  + prod + giorno_settimana +
                                          giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend 
                                           + primo_del_mese + cluster3 + cluster6 + cluster20 + 
-                                         latitudine + longitudine + vacanza, data=data_train),
+                                         latitudine + longitudine + vacanza + stagione, data=data_train),
                           label=data_train$vendite, missing=NA)
   xg_test <- xgb.DMatrix(model.matrix(~zona + area + sottoarea  + prod + giorno_settimana +
                                         giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend 
                                          + primo_del_mese + cluster3 + cluster6 + cluster20 + 
-                                        latitudine + longitudine + vacanza, data=data_test),
+                                        latitudine + longitudine + vacanza + stagione, data=data_test),
                          label=data_test$vendite, missing=NA)
   # removed stagione!  
   
@@ -123,7 +181,11 @@ xg_single <- function(n_rounds=45, details=F){
   
   # build model
   xgb_model <- xgb.train(data=xg_train, nrounds = n_rounds, nthread = 4, 
+<<<<<<< HEAD
                          watchlist=watchlist, eta = 0.1, verbose = T)
+=======
+                         watchlist=watchlist, eta = 0.07, eval.metric="logloss", eval.metric="rmse")
+>>>>>>> cbd33419152926abbf1fcb145f0dd8f553c4bb9d
   xgb_pred <- predict(xgb_model, xg_test)
   
   xgb.plot.tree(model = xgb_model)
@@ -132,10 +194,12 @@ xg_single <- function(n_rounds=45, details=F){
   sse <- (1/nrow(data_test))*sum((xgb_pred - data_test$vendite)^2)
   mape <- mean(abs(xgb_pred - data_test$vendite)/mean(data_test$vendite))
   maxape <- max(abs(xgb_pred - data_test$vendite)/mean(data_test$vendite))
+  logloss <- LogLoss(data_test$vendite, xgb_pred)
   if (details) {
     cat("SSE: ", sse, "\n")
     cat("MAPE: ", mape , "\n")
     cat("MAX APE: ", maxape, "\n")
+    cat("LOGLOSS: ", logloss, "\n")
   }  
   
   # if(details){
@@ -151,7 +215,7 @@ xg_single <- function(n_rounds=45, details=F){
 
 }
 
-xgboost_pred <- xg_single(n_rounds=900,details=T)
+xgboost_pred <- xg_single(n_rounds=700,details=T)
 
 # eta 0.2 rounds = 250
 # SSE:  2.009147 
@@ -286,13 +350,13 @@ xg_cross <- function(n_rounds=45, details=F){
   xg_train <- xgb.DMatrix(model.matrix(~ zona + area + sottoarea  + prod + giorno_settimana +
                                          giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend+
                                          primo_del_mese + cluster3 + cluster6 + cluster20 + 
-                                         latitudine + longitudine + vacanza, data=data_train),
+                                         latitudine + longitudine + vacanza + stagione, data=data_train),
                           label=data_train$vendite, missing=NA)
   
   xg_test <- xgb.DMatrix(model.matrix(~zona + area + sottoarea  + prod + giorno_settimana +
                                         giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend+
                                         primo_del_mese + cluster3 + cluster6 + cluster20 + 
-                                        latitudine + longitudine + vacanza, data=data_test),
+                                        latitudine + longitudine + vacanza + stagione, data=data_test),
                          label=data_test$vendite, missing=NA)
   # removed stagione!  
   
@@ -300,7 +364,13 @@ xg_cross <- function(n_rounds=45, details=F){
   
   # build model
   xgb_model <- xgb.cv(data=xg_train, nrounds = n_rounds, nthread = 4, 
+<<<<<<< HEAD
                          watchlist=watchlist, eta = 0.1, nfold=5, showsd = T, metrics = list("logloss", "rmse"))
+=======
+                         watchlist=watchlist, eta = 0.07, nfold=10,
+                      eval.metric="logloss", eval.metric="rmse", eval.metric="map", 
+                      tree_method="exact")
+>>>>>>> cbd33419152926abbf1fcb145f0dd8f553c4bb9d
   return(xgb_model)
   # xgb_pred <- predict(xgb_model, xg_test)
   
@@ -327,4 +397,60 @@ xg_cross <- function(n_rounds=45, details=F){
   
 }
 
-xgboost_pred <- xg_cross(n_rounds=5,details=T)
+xgboost_pred <- xg_cross(n_rounds=700,details=T)
+
+aggiungi_sottoarea_prodotto <- function(dataset, sottoarea, prodotto, valore=0){
+  temp <- filter(dataset, sottoarea==dataset[1,"sottoarea"], prod==dataset[1,"prod"])
+  temp$sottoarea <- sottoarea
+  temp$prod <- prodotto
+  temp$vendite <- valore
+  return(rbind(dataset, temp))
+}
+
+# hardcoda i valori mancanti
+# NOTA: nelle tuple aggiunti gli unici valori corretti sono data, sottoarea, prodotto e vendite!!!!
+hardcoded_test <- aggiungi_sottoarea_prodotto(xgboost_pred@prediction_table, sottoarea=20, prodotto=1, valore=0)
+hardcoded_test <- aggiungi_sottoarea_prodotto(hardcoded_test, sottoarea=20, prodotto=2, valore=0)
+hardcoded_test <- aggiungi_sottoarea_prodotto(hardcoded_test, sottoarea=78, prodotto=2, valore=0)
+hardcoded_test <- aggiungi_sottoarea_prodotto(hardcoded_test, sottoarea=32, prodotto=2, valore=0)
+
+# riprenditi il test set orginale senza i luoghi mancanti
+data_test_2 <- filter(dataset_polimi_final_with_holidays_v2,
+                      as.Date(data, format = "%Y-%m-%d") > (max(as.Date(data, format = "%Y-%m-%d")) - prediction_length))
+
+# riordina le colonne
+hardcoded_test <- arrange(hardcoded_test, prod, sottoarea, data)
+data_test_2 <- arrange(data_test_2, prod, sottoarea, data)
+
+# calcola le statistiche
+sse <- (1/nrow(data_test_2))*sum((hardcoded_test$vendite - data_test_2$vendite)^2)
+mape <- mean(abs(hardcoded_test$vendite - data_test_2$vendite)/mean(data_test_2$vendite))
+maxape <- max(abs(hardcoded_test$vendite - data_test_2$vendite)/mean(data_test_2$vendite))
+logloss <- LogLoss(data_test_2$vendite, hardcoded_test$vendite)
+  
+  cat("SSE: ", sse, "\n")
+  cat("MAPE: ", mape , "\n")
+  cat("MAX APE: ", maxape, "\n")
+  cat("LOGLOSS: ", logloss, "\n")
+
+  
+#======================== STATISTICHE XGBOOST
+  results <- data.frame(matrix(NA, ncol=6, nrow=0))
+  
+  prediction <- xgboost_pred@prediction_table
+  for (s in unique(prediction$sottoarea)){
+    local_test <- filter(data_test, sottoarea==s)
+    local_pred <- filter(prediction, sottoarea==s)
+    for (p in unique(local_test$prod)){
+      sse <- (1/nrow(filter(local_test, prod==p))*sum((filter(local_pred, prod==p)$vendite - filter(local_test, prod==p)$vendite)^2))
+      mape <- mean(abs(filter(local_pred, prod==p)$vendite - filter(local_test, prod==p)$vendite)/mean(filter(local_test, prod==p)$vendite))
+      maxape <- max(abs(filter(local_pred, prod==p)$vendite - filter(local_test, prod==p)$vendite)/mean(filter(local_test, prod==p)$vendite))
+      logloss <- LogLoss(filter(local_test, prod==p)$vendite, filter(filter(local_pred, prod==p), prod==p)$vendite)
+      
+      temp_row <- data.frame(sottoarea=s, prod=p, sse=sse, mape=mape, maxape=maxape, logloss=logloss )
+      results <- rbind(results, temp_row)
+    }
+  }
+
+  write.csv(results, file="Modified data/risultati_xgboost_no[20(1-2),78(2),32(2)].csv", row.names=FALSE)
+  

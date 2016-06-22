@@ -21,7 +21,7 @@ source("src/scoring functions.R")
 setClass(Class = "sarima_pred_res", representation(prediction = "ts", sse = "numeric"))
 setClass(Class = "full_sarima_pred_res", representation(predictions = "data.frame", predictions_2 = "data.frame", sse_list = "numeric"))
 
-sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0, num_prod = 1, num_zona = 0, num_area = 0, num_sottoarea = 0, details = T, method = "CSS", regressors = NA, use_regressors = T) {
+sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0, num_prod = 1, num_zona = 0, num_area = 0, num_sottoarea = 0, details = T, method = "CSS-ML", regressors = NULL) {
   if (nrow(data_train)==0) {
     stop("data_train is empty!")
   }
@@ -92,14 +92,12 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   train_regressors <- matrix(filtered_data$vendite_giorn_prod[1:train_length], ncol = 1)
   
   # Need to predict the test regressors!
-  if (use_regressors) {
-    if (all(is.na(regressors))) {
-      test_regressors <- pred_test_regressors(end(ts_train)+1, prediction_length = prediction_length, method = method, num_prod = num_prod, 1,0,2,2,2,5)
-    } else {
-      test_regressors <- regressors
-    }
+  if (all(is.na(regressors))) {
+    test_regressors <- pred_test_regressors(end(ts_train)+1, prediction_length = prediction_length, method = method, num_prod = num_prod)$mean
+    print(test_regressors)
+  } else {
+    test_regressors <- regressors$mean
   }
-
 
   
   # ---------------------------------------------
@@ -107,19 +105,9 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   # ----- Use a SARIMA(1,1,2,1,1,1,7) ------------
   
   # Try to fit the model by keeping into account the dynamic of the residuals, and predict over the test_set
-  if (use_regressors) {
-    fit <- Arima(ts_train, c(1, 1, 1), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T, method = method, xreg = train_regressors)
-  }
-  else {
-    fit <- Arima(ts_train, c(1, 1, 1), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T, method = method)
-  }
+  fit <- Arima(ts_train, c(1, 1, 1), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T, method = method, xreg = train_regressors)
   res <- residuals(fit)
-  if (use_regressors) {
-    pred <- forecast(fit, prediction_length, xreg = test_regressors)
-  }
-  else {
-    pred <- forecast(fit, prediction_length)
-  }
+  pred <- forecast(fit, prediction_length, xreg = test_regressors)
   
   
   if (details) {
@@ -128,19 +116,9 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   }
   
   # Fit the residuals with a purely seasonal ARMA, of lag 6, and predict over the test_set
-  if (use_regressors) {
-    fitres <- Arima(res, c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 6), include.mean = T, method = method, xreg = train_regressors)
-  }
-  else {
-    fitres <- Arima(res, c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 6), include.mean = T, method = method)
-  }
+  fitres <- Arima(res, c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 6), include.mean = T, method = method, xreg = train_regressors)
   res2 <- residuals(fitres)
-  if (use_regressors) {
-    predres <- forecast(fitres, prediction_length, xreg = test_regressors)
-  }
-  else {
-    predres <- forecast(fitres, prediction_length)
-  }
+  predres <- forecast(fitres, prediction_length, xreg = test_regressors)
   
   
   if (details) {
@@ -148,23 +126,13 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
     tsdisplay(res2)
   }
   
-  #Fit the residuals of the residuals with another purely seasonal ARMA, of lag 5, and predict over the test_set
-  if (use_regressors) {
-    fitres2 <- Arima(res2, c(0, 0, 0), seasonal = list(order = c(1, 1, 0), period = 5), include.mean = T, method = method, xreg = train_regressors)
-  }
-  else {
-    fitres2 <- Arima(res2, c(0, 0, 0), seasonal = list(order = c(1, 1, 0), period = 5), include.mean = T, method = method)
-  }
+  # Fit the residuals of the residuals with another purely seasonal ARMA, of lag 5, and predict over the test_set
+  fitres2 <- Arima(res2, c(0, 0, 0), seasonal = list(order = c(1, 1, 0), period = 5), include.mean = T, method = method, xreg = train_regressors)
   res3 <- residuals(fitres2)
-  if (use_regressors) {
-    predres2 <- forecast(fitres2, prediction_length, xreg = test_regressors)
-  }
-  else {
-    predres2 <- forecast(fitres2, prediction_length)
-  }
-
-
-
+  predres2 <- forecast(fitres2, prediction_length, xreg = test_regressors)
+  
+  
+  
   if (details) {
     print(fitres2)
     tsdisplay(res3)
@@ -221,7 +189,7 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   return(new("sarima_pred_res", prediction=pred_tot, sse=sse))
 }
 
-full_sarima_prediction <- function(train, test = NA, prediction_length = 0, details = F, regressors = NA, use_regressors = T, ...) {
+full_sarima_prediction <- function(train, test = NA, prediction_length = 0, details = F, ...) {
   
   sse_list <- c()
   result_list <- data.frame(matrix(NA, nrow = 0, ncol = 12))
@@ -230,28 +198,17 @@ full_sarima_prediction <- function(train, test = NA, prediction_length = 0, deta
     prediction_length <- length(unique(test$data))
   }
   
+  
   for (prod_i in 1:2) {
     cat("prodotto: ", prod_i, "\n")
-    if (all(is.na(regressors)) && use_regressors) {
-      regressors <- pred_test_regressors(prediction_start = max(train$data)+1, prediction_length = prediction_length, method = "CSS", num_prod = prod_i, 8,0,8,8,0,8, ...)
-    }
-    for (sottoarea_i in sort(unique(train$sottoarea))[1:10]) {
+    exo_input <- pred_test_regressors(max(train$data)+1, prediction_length = prediction_length, num_prod = prod_i, ...)
+    for (sottoarea_i in sort(unique(train$sottoarea))) {
       cat("sottoarea: ", sottoarea_i, "\n")
       if (all(!is.na(test))) {
-        if (use_regressors) {
-          res_temp <- sarima_prediction(train, test, num_prod = prod_i, num_sottoarea = sottoarea_i, details = details, regressors = regressors, use_regressors = T, ...)
-        }
-        else {
-          res_temp <- sarima_prediction(train, test, num_prod = prod_i, num_sottoarea = sottoarea_i, details = details, use_regressors = F, ...)
-        }
+        res_temp <- sarima_prediction(train, test, num_prod = prod_i, num_sottoarea = sottoarea_i, details = details, regressors = exo_input, ...)
       }
       else {
-        if (use_regressors) {
-          res_temp <- sarima_prediction(train, prediction_length = prediction_length, num_prod = prod_i, num_sottoarea = sottoarea_i, details = details, regressors = regressors, use_regressors = T, ...)
-        }
-        else {
-          res_temp <- sarima_prediction(train, prediction_length = prediction_length, num_prod = prod_i, num_sottoarea = sottoarea_i, details = details, use_regressors = F, ...)
-        }
+        res_temp <- sarima_prediction(train, prediction_length = prediction_length, num_prod = prod_i, num_sottoarea = sottoarea_i, details = details, regressors = exo_input, ...)
       }
       sse_list <- c(sse_list, attr(res_temp, "sse"))
       cat("\nNUMERO PRODOTTO: ", prod_i, "\n")
@@ -273,9 +230,10 @@ full_sarima_prediction <- function(train, test = NA, prediction_length = 0, deta
   return(new("full_sarima_pred_res", predictions = result_list, predictions_2 = result_list_2, sse_list = sse_list))
 }
 
+# result_list_2[, c("prod", "sottoarea")] <- lapply(result_list_2[, c("prod", "sottoarea")], function(x) as.factor(x))
 
 evaluate_sarima_results <- function(validation, prediction) {
-  # Join the datasets based on date and subarea
+  # Joim the datasets based on date and subarea
   common_dates <- intersect(unique(validation$data), unique(prediction$data))
   common_subareas <- intersect(unique(validation$sottoarea), unique(prediction$sottoarea))
   
@@ -293,12 +251,11 @@ evaluate_sarima_results <- function(validation, prediction) {
   return(data.frame(mse = mse, mape = mean_ape, max_ape = max_ape))
 }
 
-pred_test_regressors <- function(prediction_start, prediction_length, method = "CSS-ML", num_prod = 1, ar = 1, dif = 1, ma = 1, sar = 1, sdif = 1, sma = 1, ...) {
-  
+pred_test_regressors <- function(prediction_start, prediction_length, method = "ML-CSS", num_prod = 1) {
+  setwd("~/DM-Project")
 
-  res_table <- data.frame(matrix(NA, ncol = 9, nrow = 0))
   # Use the exogen signal of the overall sales
-  vendite_giornaliere_prod <- read.csv("Modified data/vendite_giornaliere_prod.csv", row.names=NULL, stringsAsFactors=FALSE)
+  vendite_giornaliere_prod <- read.csv("~/DM-Project/Modified data/vendite_giornaliere_prod.csv", row.names=NULL, stringsAsFactors=FALSE)
   vendite_giornaliere_prod$prod <- as.factor(vendite_giornaliere_prod$prod)
   
   # Turn dates to "Date" class
@@ -309,6 +266,7 @@ pred_test_regressors <- function(prediction_start, prediction_length, method = "
   
   summary(vendite_giornaliere_prod)
   
+
   vendite_giornaliere_prod <- filter(vendite_giornaliere_prod, prod == num_prod)
   # Use only the data until "prediction_start"
   test_vendite <- filter(vendite_giornaliere_prod, data >= prediction_start)
@@ -319,48 +277,35 @@ pred_test_regressors <- function(prediction_start, prediction_length, method = "
   tsdisplay(diff(ts_vendite,7))
   
   # Try to fit the model by keeping into account the dynamic of the residuals, and predict over the test_set
-  # 1 0 2 2 2 5
-  fit <- Arima(ts_vendite, c(ar, dif, ma), seasonal = list(order = c(sar, sdif, sma), period = 7), include.mean = T, method = method)
-  
+  # 1 0 2 3 2 5
+  fit <- Arima(ts_vendite, c(1, 0, 2), seasonal = list(order = c(2, 2, 5), period = 7), include.mean = T)#, method = method)
   res <- residuals(fit)
   tsdisplay(res, lag.max = 60)
   print(fit)
-  #res_table <- rbind(res_table, data.frame(ar = ar, dif = dif, ma = ma, sar = sar, sdif = sdif, sma = sma, sse = fit$sigma2, aic = fit$aicc))
-
-  #cat(ar, " ", dif, " ", ma, " ", sar, " ", sdif, " ", sma, " - SSE: ", fit$sigma2, " - AIC: ", fit$aic, "\n")
   pred <- forecast(fit, prediction_length)
-  
-  # if (nrow(test_vendite)!=0) {
-  #   print((1/prediction_length)*sum((test_vendite$vendite - pred$mean)^2))
-  # }
+  print((1/prediction_length)*sum((test_vendite$vendite - pred$mean)^2))
 
   
-  #print(nortestARMA(res, fit$sigma2))
+  # # Fit the residuals with a purely seasonal ARMA, of lag 6, and predict over the test_set
+  # fitres <- Arima(res, c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 6), include.mean = T)#, method = method)
+  # res2 <- residuals(fitres)
+  # predres <- forecast(fitres, prediction_length)
+  # 
+  # 
+  # # Fit the residuals of the residuals with another purely seasonal ARMA, of lag 5, and predict over the test_set
+  # fitres2 <- Arima(res2, c(0, 0, 0), seasonal = list(order = c(1, 1, 0), period = 5), include.mean = T)#, method = method)
+  # res3 <- residuals(fitres2)
+  # predres2 <- forecast(fitres2, prediction_length)
+  # 
+  # tsdisplay(res3, main ="overall prediction - res 3")
+  # 
+  # # Put together the previous predictions
+  # pred_tot <- pred$mean + predres$mean + predres2$mean
+  # 
+  # # If negative values are predicted, round them to zero.
+  # pred_tot <- ifelse(pred_tot < 0, 0, pred_tot)
+  # 
+  # print((1/prediction_length)*sum((test_vendite$vendite - pred_tot)^2))
 
-  return(coredata(pred)$mean)
-  #return(res_table)
+  return(coredata(pred))
 }
-
-# res_tot <- data.frame(matrix(NA, ncol = 9, nrow = 0))
-# 
-# last_1 <- c(1,1,1)
-# last_2 <- c(1,1,1)
-# 
-# for (i in 3:5) {
-#   for (j in 0:1) {
-#     for (k in 3:5) {
-#       for (m in 2:5) {
-#         for (n in 0:1) {
-#           for (l in 2:5) {
-#             #if(((last_1[1]*100+last_1[2]*10+last_1[3]) <= (i*100+j*10+k)) && ((last_2[1]*100+last_2[2]*10+last_2[3]) <= (m*100+n*10+l))){
-#               res_temp <- pred_test_regressors(min(test$data), 10, method = "CSS", num_prod = 1, i ,j, k, m, n, l)
-#               res_tot <- rbind(res_tot, res_temp)
-#             #}
-#           }
-#         }
-#       }
-#     }
-#   }
-# }
-# View(res_tot)
-  

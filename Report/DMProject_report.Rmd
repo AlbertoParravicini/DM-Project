@@ -1,0 +1,145 @@
+---
+title: 'Report: BIP project'
+author: "Alberto Parravicini, Simone Ripamonti, Luca Stornaiuolo"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# DATA PREPROCESSING
+
+  
+* INITIAL ATTRIBUTES
+    + "Zona": [STRING];
+    + "Area": [STRING];
+    + "Sottoarea": [STRING];
+    + "Categoria_prodotto": [STRING];
+    + "Data": [STRING];
+    + "Vendite": [NUMBER];
+    + "LATITUDINE": [NUMBER];
+    + "LONGITUDINE": [NUMBER];
+
+
+* FINAL ATTRIBUTES
+
+    + Attributes extracted from "Categoria_prodotto"
+        - "prod": [NUMBER] {string manipulation; cast to integer}; 
+
+    + Attributes extracted from "Zona", "Area" and "Sottoarea":
+        - "zona": [NUMBER] {string manipulation; cast to integer};
+        - "area": [NUMBER] {string manipulation; cast to integer};
+        - "sottoarea": [NUMBER] {string manipulation; cast to integer};
+        - "key": [STRING] {string manipulation};
+
+    + Attributes extracted from "Data"
+        - "data": [STRING];
+        - "giorno_mese": [NUMBER] {cast to date; date manipulation};
+        - "giorno_settimana": [NUMBER] {cast to date; date manipulation};
+        - "giorno_anno": [NUMBER] {cast to date; date manipulation};
+        - "mese": [NUMBER] {cast to date; date manipulation};
+        - "settimana_anno": [NUMBER] {cast to date; date manipulation};
+        - "anno": [NUMBER] {cast to date; date manipulation};
+        - "weekend": [NUMBER (BOOLEAN)] {cast to date; date manipulation};
+        - "stagione": [STRING] {cast to date; date manipulation};
+        - "primo_del_mese": [NUMBER (BOOLEAN)] {cast to date; date manipulation};
+
+    + Attributes extracted from "Data" and GPS information
+        - "vacanza": [NUMBER (BOOLEAN)] {cast to date; date manipulation};
+
+    + Attributes extracted from "Vendite"
+        - "vendite": [NUMBER] {attribute renaming};
+        - "sp_anno": [NUMBER] {number manipulation};
+        - "sp_mese": [NUMBER] {number manipulation};
+        - "sp_settimana": [NUMBER] {number manipulation};
+        - "vendite_giorn_tot": [NUMBER] {number manipulation};
+        - "vendite_missing": [NUMBER (BOOLEAN)] {number manipulation};
+        - "vendite_giorn_prod": [NUMBER] {number manipulation; PREDICTION PROCESS};
+
+    + Attributes extracted from GPS information
+        - "latitudine": [NUMBER] {attribute renaming};
+        - "longitudine": [NUMBER] {attribute renaming};
+        - "cluster3": [NUMBER] (GPS data manipulation; CLUSTERING PROCESS);
+        - "cluster6": [NUMBER] (GPS data manipulation; CLUSTERING PROCESS);
+        - "cluster20": [NUMBER] (GPS data manipulation; CLUSTERING PROCESS);
+
+
+# CLUSTERING PROCESS
+
+* HIERARCHICAL CLUSTERING (GPS information)
+    + Knee-Elbow Method Analysis: number of cluster = 6;
+
+* KMEANS CLUSTERING (GPS information)
+    + "cluster6": from Elbow Method Analysis;
+    + "cluster3": NORD, CENTRO, SUD Analysis;
+    + "cluster20": REGIONI Analysis;
+
+
+# PREDICTION PROCESS
+
+* RANDOM FOREST
+    + Single model for all sottoarea;
+    + Ranger random forest model builder;
+    + Ranger random forest model builder;
+
+* SARIMA PREDICTION
+    + Time Series Casting;
+    + Correlation Analysis;
+    + Regressors (External Input);
+
+* XGBOOST PREDICTION
+    + Single XGBoost;
+    + Multiple XGBoost;
+
+
+# MODELS EVALUATION
+
+* MSE;
+* LOGLOSS;
+* MAPE;
+* MAXAPE
+
+
+# PRELIMINARY DATA ANALYSIS
+
+* DATA EXPLORATION
+    + Un paio di plot: boxplot sulle vendite nei vari mesi, plot andamento vendite complessive giorno per giorno, grafici distribuzione di vendita mese/prodotto/giornosettimana, un paio di timeseries dentro
+    + Identificati outlier: vendite zero per una settiamna e un giorno in cui le vendite sono pazze (dal grafico sopra)
+    + Sottoaree a media nulla: 20 1-2, 32 2, 78 2
+    + Identificata la chiave del dataset come prodotto-data-sottoarea
+    + Identificati per missing values (0 senza una vera ragione di esserlo: azienda chiusa in un giorno a caso???) in alcuni giorni (vendite zero)
+  
+* DATA PREPARATION
+    + Tolte aree a media nulla dal training set poichè non utili ai fini della costruzione del modello, in quanto si trovano in aree poisizionate apparentemente in zone tra di loro non relate (indicativamente nelle vicinanze Milano, Lamezia Terme e Potenza)
+    + Sostituite le vendite dei giorni a valore zero con valori predetti tramite modello Sarima
+    + Aggiunta feature riguardante l'aggregazione delle vendite giornaliere per prodotto e totali
+    + Aggiunta feature riguardante somme cumulative per prodotto all'interno della settimana, mese e anno
+    + Clustering delle sottoaree basandosi su distanza euclidea su un diverso numero di centri:
+        * 3 zone (distinzione tra nord, centro e sud)
+        * 6 zone (valore suggerito da Knee-Elbow Analysis)
+        * 20 zone (distinzione a livello regionale)
+    + Altre feature aggiunte:vacanza, weekend, primo del mese, 
+        * vacanza: identifica i giorni di Natale, Pasqua, Capodanno, Ferragosto, etc.
+        * weekend: identifica i giorni finali della settimana (Sabato e Domenica)
+        * primo_del_mese: identifica il primo giorno di ogni mese
+# MODEL BUILDING
+
+* XGBOOST (XtremeGradienBOOOOOOOST)
+    + Test di predizioni singolo modello e multimodello per sottoarea+prodotto, a 10 e 50 giorni
+    + Tuning del singolo modello con nrounds, eta e scelta delle feature da usare nella predizione
+    + Tuning effettuato tramite tecnica early stopping basandosi su RMSE, LOGLOSS, MAP
+    + Crossvalidation per appurare la veridicità dei risultati
+
+* RANDOM FOREST
+    + Test di predizioni singolo modello e multimodello per sottoarea+prodotto, come per XgbO00sT
+    + Tuning del singolo modello agendo sui parametri numtress valutando con outofbag errors
+
+* SARIMA
+    + Fottio di plot bellissimi per vedere le correlazioni
+    
+# POST PROCESSING
+* RISULTATI
+    + Hardcoding del valore di vendita zero nelle aree a media nulla
+    + Correzione delle predizioni inferiori a zero 
