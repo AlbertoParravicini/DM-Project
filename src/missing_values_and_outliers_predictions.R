@@ -5,7 +5,7 @@ library(ggthemes)
 library(zoo)
 library(xgboost)
 
-#dataset_polimi <- read.csv("~/DM-Project/Modified data/dataset_polimi_final.csv", stringsAsFactors=FALSE, row.names=NULL)
+#dataset_polimi <- read.csv("Modified data/dataset_polimi_final.csv", stringsAsFactors=FALSE, row.names=NULL)
 
 dataset_polimi <- arrange(dataset_polimi_final_vendite_giorn, X)
 

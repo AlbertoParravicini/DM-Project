@@ -294,11 +294,11 @@ evaluate_sarima_results <- function(validation, prediction) {
 }
 
 pred_test_regressors <- function(prediction_start, prediction_length, method = "CSS-ML", num_prod = 1, ar = 1, dif = 1, ma = 1, sar = 1, sdif = 1, sma = 1, ...) {
-  setwd("~/DM-Project")
+  
 
   res_table <- data.frame(matrix(NA, ncol = 9, nrow = 0))
   # Use the exogen signal of the overall sales
-  vendite_giornaliere_prod <- read.csv("~/DM-Project/Modified data/vendite_giornaliere_prod.csv", row.names=NULL, stringsAsFactors=FALSE)
+  vendite_giornaliere_prod <- read.csv("Modified data/vendite_giornaliere_prod.csv", row.names=NULL, stringsAsFactors=FALSE)
   vendite_giornaliere_prod$prod <- as.factor(vendite_giornaliere_prod$prod)
   
   # Turn dates to "Date" class

@@ -5,8 +5,8 @@ library(xgboost)
 # ------------------------------------------------------
 # ------------------------------------------------------
 
-setwd("~/DM-Project")
-dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_final_vendite_giorn.csv", stringsAsFactors=FALSE, row.names=NULL)
+
+dataset <- read.csv("Modified data/dataset_polimi_final_vendite_giorn.csv", stringsAsFactors=FALSE, row.names=NULL)
 # Remove the x column, if present
 if("X" %in% names(dataset)){
   dataset <- arrange(dataset, X)

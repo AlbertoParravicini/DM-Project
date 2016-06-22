@@ -3,8 +3,8 @@ library(ggplot2)
 library(dplyr)
 library(PerformanceAnalytics)
 
-setwd("~/DM-Project")
-dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi.csv", stringsAsFactors=FALSE, row.names=NULL)
+
+dataset <- read.csv("Modified data/dataset_polimi.csv", stringsAsFactors=FALSE, row.names=NULL)
 
 # Remove the x column, if present
 dataset <- dataset[ , !(names(dataset) %in% c("X"))]

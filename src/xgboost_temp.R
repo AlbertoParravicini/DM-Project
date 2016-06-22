@@ -29,7 +29,7 @@ setClass(Class = "full_xgboost_pred", representation(predictions = "data.frame",
 
 # used to fastly rerun the algorithm
 
-  # dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_with_holidays.csv", stringsAsFactors=FALSE, row.names=NULL)
+  # dataset <- read.csv("Modified data/dataset_polimi_with_holidays.csv", stringsAsFactors=FALSE, row.names=NULL)
   
   dataset <- dataset_polimi_final_with_holidays_v2
   dataset$stagione[dataset$stagione=="inverno"] <- 1
