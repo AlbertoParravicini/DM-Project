@@ -3,34 +3,148 @@ title: "DM-Report"
 author: "Alberto Parravicini"
 date: "22 giugno 2016"
 output: 
+   
   html_document: 
     theme: spacelab
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-setwd("~/DM-Project")
+library(xts)
+library(ggplot2)
+library(dplyr)
+library(tseries)
+library(PerformanceAnalytics)
+library(forecast)
+library(astsa)
+library(Metrics)
+library(xgboost)
+library(ranger)
+library(ggthemes) # visualization
+library(normwhn.test)
+library(nortest)
+library(nortestARMA)
 ```
 
-* DATA EXPLORATION:
-    This section contains the preliminary operations we performed on the dataset: data visualization, outlier identification, and in general anything that could help us to better understand the dataset and the information it contains.
-    + Un paio di plot: boxplot sulle vendite nei vari mesi, plot andamento vendite complessive giorno per giorno, grafici distribuzione di vendita mese/prodotto/giornosettimana, un paio di timeseries dentro
-
-    + Initial exploratory analysis: we identified the **distribution of sales** (cumulative or divided by product) across areas, days of the week, months, years. 
-    Tuples in the dataset are uniquely denoted by the key "Product, Subarea, Date".
-    + Outlier and missing values: the dataset doesn't explicitely contains missing values (i.e. NA or similar values). There is however of missing subarea (51) and a number of outliers; as areas are mapped to an arbitrary number of subareas (and each subarea is mapped to exactly one area), there is no reason to believe that the missing subarea should negatively affect other predictions. 
-    On the other hands, the extremely high sales values at *"30/6/2014"*, and the lack of sales over the period from *"2014-03-19"* to *"2014-03-25"* can be considered outliers and missing values: indeed, these events seems to be purely random and not correlated to any subsequent behaviour of the sales. We decided to replace these values with a prediction (see "Data preparation" for further details regarding the metodology).
-    + A number of subareas displays unusual sales behaviours: subarea 20, and subareas 32 and 78 (relatively to product 2) have mostly no sales. We then decided to inspect the time-series of subareas and of the other subareas, to understand if they displayed a predictable internal structure or if they resembled white noise. The **Box-Pierce** test statistic examines if a univariate time-series is composed of independent observations: this is the case of white noise or of constant signals, whose best predictor is the mean of the signal itself.
-    The null hypothesis of the Box-Pierce test is that the signal is made of independent observations: a low p-value implies that this isn't the case, and the signal has a more complex internal structure.
-    ```
-    # Box-Pierce test for subarea 20, product 1
-    dataset_polimi <- read.csv("Original data/dataset_polimi.csv", stringsAsFactors=FALSE)
-    subarea_20_p1 <- filter(dataset_polimi, Sottoarea == "Sottoarea_20", Categoria_prodotto == "Prodotto_1")
-    tsdisplay(subarea_20_p1$Vendite, lag.max = 100, main = "Analysis of subarea 20 - Product 1")
-    Box.test(subarea_20_p1$Vendite)
-    # Box-Pierce test for subarea 22, product 1, for comparison (this timeseries has a complex structure)
-    Box.test(filter(dataset_polimi, Sottoarea == "Sottoarea_22", Categoria_prodotto == "Prodotto_1")$Vendite)
-    ```
-    Subarea 20, and subareas 32 and 78 (relatively to product 2) can indeed be considered deterministic signals with mean 0: using  the tuples referring these time-series in the training would not be beneficial, so we removed them from the dataset, and predicted sales equal to 0 a-posteriori.
+## DATA EXPLORATION:
+This section contains the preliminary operations we performed on the dataset: data visualization, outlier identification, and in general anything that could help us to better understand the dataset and the information it contains.
     
-* DATA PREPARATION:
+* Un paio di plot: boxplot sulle vendite nei vari mesi, plot andamento vendite complessive giorno per giorno, grafici distribuzione di vendita mese/prodotto/giornosettimana, un paio di timeseries dentro
+
+**Initial exploratory analysis**: we identified the *distribution of sales* (cumulative or divided by product) across areas, days of the week, months, years. 
+    Tuples in the dataset are uniquely denoted by the key "Product, Subarea, Date".
+    
+**Outlier and missing values**: the dataset doesn't explicitely contains missing values (i.e. NA or similar values). There is however of missing subarea (**51**) and a number of outliers; as areas are mapped to an arbitrary number of subareas (and each subarea is mapped to exactly one area), there is no reason to believe that the missing subarea should negatively affect other predictions. 
+On the other hands, the extremely high sales values at *"30/6/2014"*, and the lack of sales over the period from *"2014-03-19"* to *"2014-03-25"* can be considered outliers and missing values: indeed, these events seems to be purely random and not correlated to any subsequent behaviour of the sales. We decided to replace these values with a prediction (see "Data preparation" for further details regarding the metodology).  
+    
+A number of subareas displays unusual sales behaviours: subarea **20**, and subareas **32** and **78** (relatively to product 2) have mostly no sales. We then decided to inspect the time-series of subareas and of the other subareas, to understand if they displayed a predictable internal structure or if they resembled white noise.   
+The *Box-Pierce* test statistic examines if a univariate time-series is composed of independent observations: this is the case of white noise or of constant signals, whose best predictor is the mean of the signal itself.    
+The null hypothesis of the *Box-Pierce* test is that the signal is made of independent observations: a low p-value implies that this isn't the case, and the signal has a more complex internal structure.
+
+
+    
+```{r echo=F, tidy = T, comment = "#", collapse=T}
+paste("Box-Pierce test for subarea 20, product 1")
+dataset_polimi <- read.csv("../Original data/dataset_polimi.csv", stringsAsFactors=FALSE)
+subarea_20_p1 <- filter(dataset_polimi, Sottoarea == "Sottoarea_20", Categoria_prodotto == "Prodotto_1")
+   
+Box.test(subarea_20_p1$Vendite)
+```
+```{r echo=F, tidy = T, comment = "#", collapse=T}
+paste("Box-Pierce test for subarea 22, product 1, for comparison (this timeseries has a complex structure)")
+Box.test(filter(dataset_polimi, Sottoarea == "Sottoarea_22", Categoria_prodotto == "Prodotto_1")$Vendite)
+tsdisplay(subarea_20_p1$Vendite, lag.max = 100, main = "Analysis of subarea 20 - Product 1")
+```
+
+
+Subarea 20, and subareas 32 and 78 (relatively to product 2) can indeed be considered deterministic signals with mean 0: using  the tuples referring these time-series in the training would not be beneficial, so we removed them from the dataset, and predicted sales equal to 0 *a-posteriori*. By using the geographical coordinates at our disposal we noted that these areas are close to Milan, Lamezia Terme and Potenza: unrelated cities that further confirm the hypothesis that keeping these values in the training set would not be useful. 
+
+***
+    
+## DATA PREPARATION: 
+In this section we discuss the process of further cleaning the data, and the ideas behind the feature engineering applied to the dataset.
+
+**Basic feature engineering**
+
+* Split the dates into:
+    + Day of the week.
+    + Day of the month.
+    + Day of the year.
+    + Month.
+    + Week of the year.
+    + Year.
+  
+
+* Add a "Weekend" column: is a certain day a saturday or a sunday?)
+* Add "Holiday": is a certain day an Italian holiday (Christmas, Easter, etc...)
+* Add "First of the month": we noticed that during the first day of the month sales are generally lower. Out of curiosity, we added a boolean variable to explicitely keep track of whether a day is the first of the month or not.
+  
+  
+**Other feature engineering**
+
+* We added various features that keep track of cumulatives sales over certain periods:
+    + Cumulative sales, divided by product and subarea, over each week, month and year (i.e. how many product the company sold over a certain period, in a certain area).
+    + Aggregate sales of the entire company, day by day, divided by product and cumulative (i.e. how many product the company sold in a certain day).
+    
+It is not possible to compute directly these values for dates above the one in the dataset: to overcome this issue, we built various *Sarima* models that predicted each of these time-series, over the desired prediction period.  
+The idea is that using a Sarima model built specifically for a certain time-series (e.g. the aggregate sales) can lead to a highly accurate prediction that can be beneficial to the other models. The cumulative sales didn't prove to be very useful, but the predicion of the aggregate sales improved sightly our results.  
+
+Note that to perform predictions over test and validation sets we also used the predictions of these timeseries, instead of the real values that we had at our disposal (used for the training, obviously): if we used the latter, the results would be faked, as we'd be employing information unavailable in a real prediction.
+    
+* We replaced the outliers and the missing values identified before with a prediction found through a *Random Forest* model:
+As these values are located in the middle of the dataset, instead that at the end, a *Sarima* model wouldn't be as effective, as it could use fewer consecutive data for training.  
+The values replaced are the ones at *"2014-01-01"*, *"30/6/2014"*, and from *"2014-03-19"* to *"2014-03-25"* (in the 2 following years, sales at *"01-01"* are usually rather low, but never completely 0 as in 2014)
+
+* TODO: CLUSTERING WITH PLOTS
+
+***
+
+## MODEL BUILDING:
+
+### Seasonal ARIMA: 
+Our first approach to the prediction of sales was to use **Seasonal ARIMA** models (Seasonal Auto-Regressive Integrated Moving Average): these models are in general capable of fitting the structure of very complex time series, even those with seasonalities or trends like in our case. Furthermore, finding the right order of a *Seasonal ARIMA* is something that can be done (with a certain degree of approximation) by applying mathematical and statistical analysis to the time-series themselves.  
+As an example, **Auto-correlation**, **Partial auto-correlation**, to understand the  **MA** and **AR** orders, or the **Neyman Smooth Tests of Normality** to check if the residuals of the training can be considered **white noise**.
+
+
+```{r echo=F, tidy = T, comment = "#", collapse=T, fig.align="center"}
+
+dataset <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE, row.names=NULL)
+dataset <- dataset[ , !(names(dataset) %in% c("X"))]
+if (class(dataset$vendite) == "factor") {
+  dataset$vendite <- as.numeric(levels(dataset$vendite))[dataset$vendite]
+}
+dataset$data <- as.Date(dataset$data)
+factorVars <- c('zona','area', "sottoarea",
+                'prod','giorno_mese', "giorno_settimana", "giorno_anno", "vendite_missing", "mese", "settimana_anno", "anno", "weekend","stagione", "key", "primo_del_mese", "cluster3", "cluster6", "cluster20", "vacanza")
+dataset[factorVars] <- lapply(dataset[factorVars], function(x) as.factor(x))
+
+prediction_length <- 30
+train <- filter(dataset, data <= max(data) - prediction_length)
+test <- filter(dataset, data > max(data) - prediction_length)
+train$data <- as.Date(as.character(train$data),format="%Y-%m-%d")
+test$data <- as.Date(as.character(test$data),format="%Y-%m-%d")
+filtered_data <- filter(dataset, prod == 1, sottoarea == 1)
+train_length <- length(unique(train$data))
+ts_full <- zoo(filtered_data$vendite, order.by = filtered_data$data)
+ts_train <- ts_full[1:train_length]
+ts_test <- ts_full[(train_length+1):(prediction_length+train_length)]
+
+fit <- Arima(ts_train, c(1, 1, 1), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T, method = "CSS")
+pred <- forecast(fit, prediction_length)
+
+train_table <- data.frame(vendite=coredata(ts_train)[(length(ts_train)-prediction_length):length(ts_train)], data=index(ts_train[(length(ts_train)-prediction_length):length(ts_train)]), type = "train")
+    test_table <- data.frame(vendite=coredata(ts_test), data=seq.Date(from=max(train$data)+1, length.out = prediction_length, by = 1), type = "test")
+    pred_table <- data.frame(vendite=pred$mean, data=seq.Date(from=max(train$data)+1, length.out = prediction_length, by = 1), type = "pred")
+
+table_tot <- rbind(train_table, test_table, pred_table)
+
+p <- ggplot(table_tot, aes(x=data, y=vendite, color = type)) +
+      coord_cartesian(xlim = c(end(ts_train)-prediction_length, end(ts_train)+prediction_length))
+p <- p + geom_line(size = 1, alpha = 0.8) + geom_point(size = 2) + scale_colour_colorblind()
+p <- p + theme_minimal() +xlab("Data") + ylab("Numero di vendite") + ggtitle("Prediction of product 1, subarea 1, over 50 days")
+print(p)
+
+
+```
+        
+       
