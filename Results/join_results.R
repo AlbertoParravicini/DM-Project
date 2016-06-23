@@ -15,7 +15,7 @@ predset <- predset[,c("zona","area","sottoarea","prod", "data")]
 predset <- unique(predset)
 
 # PARAMS
-models <- c("random_forest", "sarima", "xgboost")
+models <- c("random_forest_FAKE", "sarima_FAKE", "xgboost_FAKE")
 used_error <- 'sse'
 
 for(i in seq(1:length(models))){
