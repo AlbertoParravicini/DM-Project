@@ -34,6 +34,40 @@ This section contains the preliminary operations we performed on the dataset: da
     
 * Un paio di plot: boxplot sulle vendite nei vari mesi, plot andamento vendite complessive giorno per giorno, grafici distribuzione di vendita mese/prodotto/giornosettimana, un paio di timeseries dentro
 
+
+
+    
+```{r echo=F, tidy = T, comment = "#", collapse=T, warning=F}
+
+dataset <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
+dataset <- dataset[ , !(names(dataset) %in% c("X"))]
+
+# Convert dates to class "Data"
+dataset$data <- as.Date(dataset$data)
+# Convert "vendite" to numeric values if needed
+if (class(dataset$vendite) == "factor") {
+  dataset$vendite <- as.numeric(levels(dataset$vendite))[dataset$vendite]
+}
+
+# Turn some features to factors
+factorVars <- c('zona','area', "sottoarea",
+                'prod','giorno_mese', "giorno_settimana", "giorno_anno", "mese", "settimana_anno", "anno", "weekend","stagione", "key")
+
+dataset[factorVars] <- lapply(dataset[factorVars], function(x) as.factor(x))
+
+```
+```{r echo=F, tidy = T, comment = "#", collapse=T, warning=F}
+
+p0 <- ggplot(dataset, aes(giorno_settimana, vendite)) + geom_boxplot(outlier.shape = NA, color = "#004d80", fill = "#008ae6", alpha = 0.7) + scale_y_continuous(limits = c(0, 15)) + 
+  ggtitle("Sales for each day of the week, divided by product") + theme_bw() + facet_grid(. ~ prod)
+print(p0)
+
+p0 <- ggplot(dataset, aes(mese, vendite)) + geom_boxplot(outlier.shape = NA, color = "#004d80", fill = "#008ae6", alpha = 0.7) + scale_y_continuous(limits = c(0, 15)) + 
+  ggtitle("Sales for each month") + theme_minimal()
+print(p0)
+
+```
+
 **Initial exploratory analysis**: we identified the *distribution of sales* (cumulative or divided by product) across areas, days of the week, months, years. 
     Tuples in the dataset are uniquely denoted by the key "Product, Subarea, Date".
     
@@ -141,7 +175,7 @@ As we were provided the GPS coordinates of each subarea, we plotted their latitu
 We decided to perform a **Knee-Elbow** analysis to understand how the subareas could be grouped together in a different way than the one provided by zones and areas. First of all we built a **hierarchical clustering**.
     
 ```{r echo=F}
- gps <- read.csv("../gps.csv", stringsAsFactors = F)
+ gps <- read.csv("../Original data/gps.csv", stringsAsFactors = F)
         # init the seed to be able to repeat the experiment
         set.seed(1234)
         # build the distance matrix
@@ -180,6 +214,7 @@ Given the hierarchical clustering result, we plotted WSS and BSS errors
         # plot(x, y=plot_wss, cex=2, pch=19, col="red", ylab="", xlab="")
         # lines(x,plot_wss, col="red")
 ```
+
 Then we decided to group subareas according to three different **k-means** runs:
         * 3 cluster grouping, to distinguish between North, Center and South Italy.
         * 6 cluster grouping, according to the value suggested by the **Knee-Elbow** analysis.
@@ -294,10 +329,9 @@ print(p)
 ```
         
 From a simple inspection of the *autocorrelation function*, we can see how the time-series has a clear weekly seasonality.  
-After various trials, by making use of metrics such as the *mean squared error*, the *AIC*[^1], and the estimated variance of the parameters, we opted for a **(1, 1, 1)(1, 1, 1)_7** model.  
-However, the analysis of the residuals showed some traces of a remaining seasonality, of different latency. We then added a second *Seasonal ARIMA*, of order **(0, 0, 0)(1, 1, 1)_6**, to model the residual of the first model, and a third *Seasonal ARIMA*, of order **(0, 0, 0)(1, 1, 0)_5**, to fit the residuals of the second.  
-The overall prediction is the sum of the predictions of the three models.
-The residuals of this stacked *Seasonal ARIMA* can be considered white noise (low p-value: very likely to be white noise).
+After various trials, by making use of metrics such as the *mean squared error*, the *AIC*[^1], and the estimated variance of the parameters, we opted for a **(2, 1, 1)(4, 1, 4)_7** model.  
+However, the analysis of the residuals showed some traces of a remaining seasonality, of different latency. 
+The residuals of this *Seasonal ARIMA* can be considered white noise (low p-value: very likely to be white noise).
 
     nortestARMA(res_tot, fit$sigma2)
     #$pvalsdmuest
@@ -342,7 +376,8 @@ We tried two approaches with **Random Forest**: we built a single model that use
 
 The **out of bag** error was the main metric used to compare different random forests model, as it is in general considered a good estimate of the real predictive power of the model; we also employed *mean square error*, *MAPE* and *MAX APE*, computed on a test set. These last metrics were also useful to compare the forests to the *Sarima* models.  
 
-We used the **ranger** package for R, as it is much faster than the commonly used **randomForest**, and can make use of multi-threading.
+We used the **ranger** package for R, as it is much faster than the commonly used **randomForest**, and can make use of multi-threading.  
+The final random forest used 1200 trees. Using more trees didn't reduce by a significant amount the *out of bag* error and the *MSE* on the test set, and proved to be computationally prohibitive.
 
     rfs_model <- ranger(train_set,
                        formula=vendite ~ (zona + area + sottoarea  + prod +
@@ -389,6 +424,14 @@ Features and parameters for the final model:
 Among the three models (*Sarima*, *Random Forest*, *XGBoost*), **XGBoost** proved to be the most powerful one; however, by looking at the **mean square error** computed over the various product/subareas combinations of the test set, we noticed how in some occasion *Sarima* and *Random forest* would provide better predictions.
 
 We decided to keep this result into account, and build an ensemble model that would use the predictions of the three models, and weight them accordingly to the estimated *mean square error* of each product/subareas combination in the test set.
+
+Note that the weighting was done without keeping the outlier subareas into account, to avoid skewing the results.
+
+| **MODEL** | **MSE** | **MAPE** | **MAXAPE** | **OTHER** |
+|:------:|:------:|:------:|:------:|:------:|
+| **Sarima** | 2.146717  | 0.3211637 | 1.028536 | - | 
+| **Random Forest** | 2.179245 | 0.2865883 |4.188574 | *Out of bag:* 1.771598 | 
+| **XGBoost** | asd | asda | asd | asdas | 
 
 [^1]: http://www4.ncsu.edu/~shu3/Presentation/AIC.pdf
 [^2]: http://www.slideshare.net/ShangxuanZhang/xgboost

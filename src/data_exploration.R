@@ -57,7 +57,8 @@ p1
 daily <- aggregate(cbind(vendite) ~ mese , data = dataset, FUN = sum)
 barplot(daily$vendite)
 # Can we do better?
-p0 <- ggplot(dataset, aes(mese, vendite)) + geom_boxplot()
+p0 <- ggplot(dataset, aes(mese, vendite)) + geom_boxplot(outlier.shape = NA, color = "#004d80", fill = "#008ae6", alpha = 0.7) + scale_y_continuous(limits = c(0, 15)) + 
+  ggtitle("Sales for each month") + theme_minimal()
 p0
 # There are fewer slase in august, but not by a wide margin
 # The higher sales in february might be linked to the smaller number of days
