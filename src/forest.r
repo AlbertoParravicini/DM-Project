@@ -333,9 +333,10 @@ evaluate_forest_results <- function(validation, prediction) {
   return(data.frame(mse = mse, mape = mean_ape, max_ape = max_ape))
 }
 
-results <- data.frame(matrix(NA, ncol=6, nrow=0))
+
 
 compute_errors <- function(prediction, test, write = F) {
+  results <- data.frame(matrix(NA, ncol=6, nrow=0))
   for (s in unique(prediction$sottoarea)){
     local_test <- filter(test, sottoarea==s)
     local_pred <- filter(prediction, sottoarea==s)
@@ -349,8 +350,9 @@ compute_errors <- function(prediction, test, write = F) {
     }
   }
   if (write) {
-    write.csv(results, file="Results/risultati_xgboost_no[20(1-2),78(2),32(2)].csv", row.names=FALSE)
+    write.csv(results, file="Results/risultati_forest_no[20(1-2),78(2),32(2)]_200_trees.csv", row.names=FALSE)
   }
+  return(results)
 }
 
 
