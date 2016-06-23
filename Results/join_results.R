@@ -15,12 +15,13 @@ predset <- predset[,c("zona","area","sottoarea","prod", "data")]
 predset <- unique(predset)
 
 # PARAMS
-models <- c("random_forest_FAKE", "sarima_FAKE", "xgboost_FAKE")
+models <- c("random_forest", "sarima", "xgboost")
+version <- "FUTURE"
 used_error <- 'sse'
 
 for(i in seq(1:length(models))){
   # Import data
-  curr_pred <- read.csv(paste("Results/predizione_", models[i], ".csv", sep = ""), stringsAsFactors=FALSE, row.names=NULL)
+  curr_pred <- read.csv(paste("Results/predizione_", models[i], "_", version, ".csv", sep = ""), stringsAsFactors=FALSE, row.names=NULL)
   curr_pes <- read.csv(paste("Results/pesi_", models[i], ".csv", sep = ""), stringsAsFactors=FALSE, row.names=NULL)
   
   # Rename column vendite
@@ -75,5 +76,5 @@ risultati$Area <- paste('Area_', risultati$Area, sep = "")
 risultati$Sottoarea <- paste('Sottoarea_', risultati$Sottoarea, sep = "")
 risultati$Categoria_prodotto <- paste('Prodotto_', risultati$Categoria_prodotto, sep = "")
 
-write.csv(predset, file="Results/PREDIZIONE_PESI.csv", row.names = F)
-write.csv(risultati, file="Results/PREDIZIONE.csv", row.names = F)
+write.csv(predset, file=paste("Results/PREDIZIONE_CON_PESI_", version, ".csv", sep = ""), row.names = F)
+write.csv(risultati, file=paste("Results/PREDIZIONE_FINALE_", version, ".csv", sep = ""), row.names = F)
