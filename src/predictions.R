@@ -263,13 +263,28 @@ cat("sottoarea: ", s_area, "\n")
 (1/nrow(data_test))*sum((forest_pred$predictions - data_test$vendite)^2)
 (1/nrow(data_test))*sum((xgb_pred - data_test$vendite)^2)
 
+# CARICA I DATASET - ROBA PER RIPA DA QUI IN POi
 
+# TOGLI DAL DATASET SOTTOAREE+PROD DA NON PREDIRRE
+
+# remove sottoarea 20
+dataset <- filter(dataset, sottoarea!=20)
+# remove sottoarea 78 prodotto 2
+temp <- filter(dataset, sottoarea==78, prod==1)
+dataset <- filter(dataset, sottoarea!=78)
+dataset <- rbind(dataset, temp)
+# remove sottoarea 30 prodotto 2
+temp <- filter(dataset, sottoarea==32, prod==1)
+dataset <- filter(dataset, sottoarea!=32)
+dataset <- rbind(dataset, temp)
 
 train <- filter(dataset, data <= max(data) - prediction_length)
 test <- filter(dataset, data > max(data) - prediction_length)
 
 predset <- read.csv("Modified data/predset_complete_with_clusters.csv", stringsAsFactors = F)
+
 predset$vendite <- 0
+
 
 ## TUTORIAL PER RIPA:
 # carica tutto quello che c'è in forest.r

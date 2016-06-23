@@ -333,4 +333,26 @@ evaluate_forest_results <- function(validation, prediction) {
   return(data.frame(mse = mse, mape = mean_ape, max_ape = max_ape))
 }
 
+results <- data.frame(matrix(NA, ncol=6, nrow=0))
+
+compute_errors <- function(prediction, test, write = F) {
+  for (s in unique(prediction$sottoarea)){
+    local_test <- filter(test, sottoarea==s)
+    local_pred <- filter(prediction, sottoarea==s)
+    for (p in unique(local_test$prod)){
+      sse <- (1/nrow(filter(local_test, prod==p))*sum((filter(local_pred, prod==p)$vendite - filter(local_test, prod==p)$vendite)^2))
+      mape <- mean(abs(filter(local_pred, prod==p)$vendite - filter(local_test, prod==p)$vendite)/mean(filter(local_test, prod==p)$vendite))
+      maxape <- max(abs(filter(local_pred, prod==p)$vendite - filter(local_test, prod==p)$vendite)/mean(filter(local_test, prod==p)$vendite))
+
+      temp_row <- data.frame(sottoarea=s, prod=p, sse=sse, mape=mape, maxape=maxape)
+      results <- rbind(results, temp_row)
+    }
+  }
+  if (write) {
+    write.csv(results, file="Results/risultati_xgboost_no[20(1-2),78(2),32(2)].csv", row.names=FALSE)
+  }
+}
+
+
+
 
