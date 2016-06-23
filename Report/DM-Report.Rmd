@@ -440,13 +440,16 @@ Among the three models (*Sarima*, *Random Forest*, *XGBoost*), **XGBoost** prove
 
 We decided to keep this result into account, and build an ensemble model that would use the predictions of the three models, and weight them accordingly to the estimated *mean square error* of each product/subareas combination in the test set.
 
-Note that the weighting was done without keeping the outlier subareas into account, to avoid skewing the results.
+$$E = mc^{2}$$
+
+Note that the weighting was done without using the predictions for the outlier subareas (the ones for which we predicted 0 sales over the period), to avoid skewing the results with handmade predictions.
 
 | **MODEL** | **MSE** | **MAPE** | **MAXAPE** | **OTHER** |
 |:------:|:------:|:------:|:------:|:------:|
 | **Sarima** | 2.146717  | 0.3211637 | 1.028536 | - | 
 | **Random Forest** | 2.179245 | 0.2865883 |4.188574 | *Out of bag:* 1.771598 | 
-| **XGBoost** | asd | asda | asd | asdas | 
+| **XGBoost** |  1.992626 |  0.2743475 | 4.012398 | *Logloss:* -29.58445 | 
+| **Ensemble** | 1.902922 | - | - | - |
 
 [^1]: http://www4.ncsu.edu/~shu3/Presentation/AIC.pdf
 [^2]: http://www.slideshare.net/ShangxuanZhang/xgboost
