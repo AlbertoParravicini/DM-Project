@@ -274,8 +274,10 @@ predset$vendite <- 0
 ## TUTORIAL PER RIPA:
 # carica tutto quello che c'è in forest.r
 # carica il dataset (holiday_v2 eccetera, il più aggiornato che c'è)
-# carica il predset (le 2 righe qui sopra)
+# carica il train, test, predset (le 4 righe qui sopra)
 
+# res <- rfs(train, test, num_trees = 1200, details = T)
 # res_pred <- rfs(dataset, predset, num_trees = 1200, details = T)
 # mi sembra che 1200 fosse decente, al massimo prova a vedere qualcosa, tieni traccia pure dell'out of bag error (viene stampato), ci serve per il report
 # salva da qualche parte res_pred@prediction_table
+# idem per res@prediction_table, ci serve per stimare gli sse sulle sottoaree
