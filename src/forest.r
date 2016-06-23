@@ -100,6 +100,11 @@ rfs <- function(train_set, test_set, num_trees = 400, details = F, ...){
                         stagione + primo_del_mese + cluster3 + cluster6 + cluster20 +
                         latitudine + longitudine + giorno_settimana+weekend+vacanza),
                        num.trees = num_trees, write.forest = T, verbose = details, num.threads = 4, ...)
+ 
+  cat("RSQUARED: ", rfs_model$r.squared, "\n")
+  cat("OUT OF BAG ERROR: ", rfs_model$prediction.error, "\n")
+  
+  
   # 
   # # plot importance
   # if (details) {
@@ -117,6 +122,8 @@ rfs <- function(train_set, test_set, num_trees = 400, details = F, ...){
   
   # predict
   rfs_predict <- predict(rfs_model, test_set)
+  
+  
   
   
   sse <- (1/nrow(test_set))*sum((rfs_predict$predictions - test_set$vendite)^2)

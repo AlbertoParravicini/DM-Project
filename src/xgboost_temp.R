@@ -38,7 +38,7 @@ prediction_length <- 10
 factorVars <- c('zona','area', "sottoarea",'prod','giorno_mese', "giorno_settimana", "giorno_anno",
                 "mese", "settimana_anno", "anno", "weekend","stagione", "key", "primo_del_mese",
                 "vendite_missing", "cluster3", "cluster6", "cluster20", "vacanza")
-=======
+
 
   # dataset <- read.csv("Modified data/dataset_polimi_with_holidays.csv", stringsAsFactors=FALSE, row.names=NULL)
   
@@ -49,7 +49,7 @@ factorVars <- c('zona','area', "sottoarea",'prod','giorno_mese', "giorno_settima
   dataset$stagione[dataset$stagione=="autunno"] <- 4
   dataset$stagione <- as.numeric(dataset$stagione)
   prediction_length <- 10
->>>>>>> cbd33419152926abbf1fcb145f0dd8f553c4bb9d
+
   
   
   
@@ -58,10 +58,10 @@ dataset[factorVars] <- lapply(dataset[factorVars], function(x) as.factor(x))
 # Convert dates to class "Data"
 dataset$data <- as.Date(dataset$data, format = "%Y-%m-%d")
   
-<<<<<<< HEAD
+
 data_train <- filter(dataset, data <= max(data) - prediction_length)
 data_test <- filter(dataset, data > max(data) - prediction_length)
-=======
+
 # TOGLI DAL DATASET SOTTOAREE+PROD DA NON PREDIRRE
 
   # remove sottoarea 20
@@ -80,13 +80,13 @@ data_test <- filter(dataset, data > max(data) - prediction_length)
 
   # Convert dates to class "Data"
   dataset$data <- as.Date(dataset$data, format = "%Y-%m-%d")
->>>>>>> cbd33419152926abbf1fcb145f0dd8f553c4bb9d
+
   
   
 data_train$data <- as.Date(data_train$data, format = "%Y-%m-%d")
 data_test$data <- as.Date(data_test$data, format = "%Y-%m-%d")
   
-<<<<<<< HEAD
+
 # Convert "vendite" to numeric values if needed
 if (class(dataset$vendite) == "factor") {
   dataset$vendite <- as.numeric(levels(dataset$vendite))[dataset$vendite]
@@ -97,21 +97,7 @@ if (class(data_train$vendite) == "factor") {
 if (class(data_test$vendite) == "factor") {
   data_test$vendite <- as.numeric(levels(data_test$vendite))[data_test$vendite]
 }
-=======
-  data_train$data <- as.Date(data_train$data, format = "%Y-%m-%d")
-  data_test$data <- as.Date(data_test$data, format = "%Y-%m-%d")
-  
-  # Convert "vendite" to numeric values if needed
-  if (class(dataset$vendite) == "factor") {
-    dataset$vendite <- as.numeric(levels(dataset$vendite))[dataset$vendite]
-  }
-  if (class(data_train$vendite) == "factor") {
-    data_train$vendite <- as.numeric(levels(data_train$vendite))[data_train$vendite]
-  }
-  if (class(data_test$vendite) == "factor") {
-    data_test$vendite <- as.numeric(levels(data_test$vendite))[data_test$vendite]
-  }
->>>>>>> cbd33419152926abbf1fcb145f0dd8f553c4bb9d
+
 
 
 
@@ -180,12 +166,9 @@ xg_single <- function(n_rounds=45, details=F){
   watchlist <- list( test=xg_test, train=xg_train)
   
   # build model
-  xgb_model <- xgb.train(data=xg_train, nrounds = n_rounds, nthread = 4, 
-<<<<<<< HEAD
-                         watchlist=watchlist, eta = 0.1, verbose = T)
-=======
+  xgb_model <- xgb.train(data=xg_train, nrounds = n_rounds, nthread = 4, verbose = T,
                          watchlist=watchlist, eta = 0.07, eval.metric="logloss", eval.metric="rmse")
->>>>>>> cbd33419152926abbf1fcb145f0dd8f553c4bb9d
+
   xgb_pred <- predict(xgb_model, xg_test)
   
   xgb.plot.tree(model = xgb_model)
@@ -364,13 +347,9 @@ xg_cross <- function(n_rounds=45, details=F){
   
   # build model
   xgb_model <- xgb.cv(data=xg_train, nrounds = n_rounds, nthread = 4, 
-<<<<<<< HEAD
-                         watchlist=watchlist, eta = 0.1, nfold=5, showsd = T, metrics = list("logloss", "rmse"))
-=======
                          watchlist=watchlist, eta = 0.07, nfold=10,
                       eval.metric="logloss", eval.metric="rmse", eval.metric="map", 
                       tree_method="exact")
->>>>>>> cbd33419152926abbf1fcb145f0dd8f553c4bb9d
   return(xgb_model)
   # xgb_pred <- predict(xgb_model, xg_test)
   
