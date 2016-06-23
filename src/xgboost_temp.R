@@ -28,7 +28,7 @@ setClass(Class = "xgboost_pred", representation(predictions = "numeric", predict
 setClass(Class = "full_xgboost_pred", representation(predictions = "data.frame", sse_list = "numeric"))
 
 # used to fastly rerun the algorithm
-<<<<<<< HEAD
+
 dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE, row.names=NULL)
   
 #dataset <- dataset_polimi_with_holidays
@@ -431,5 +431,5 @@ logloss <- LogLoss(data_test_2$vendite, hardcoded_test$vendite)
     }
   }
 
-  write.csv(results, file="Modified data/risultati_xgboost_no[20(1-2),78(2),32(2)].csv", row.names=FALSE)
+  write.csv(results, file="Results/risultati_xgboost_no[20(1-2),78(2),32(2)].csv", row.names=FALSE)
   

@@ -102,10 +102,10 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
   
   # ---------------------------------------------
   # ----- START OF MODELING ---------------------
-  # ----- Use a SARIMA(1,1,2,1,1,1,7) ------------
+  # ----- Use a SARIMA(1,1,1,1,1,1,7) ------------
   
   # Try to fit the model by keeping into account the dynamic of the residuals, and predict over the test_set
-  fit <- Arima(ts_train, c(1, 1, 1), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T, method = method, xreg = train_regressors)
+  fit <- Arima(ts_train, c(2, 1, 1), seasonal = list(order = c(4, 1, 4), period = 7), include.mean = T, method = method, xreg = train_regressors)
   res <- residuals(fit)
   pred <- forecast(fit, prediction_length, xreg = test_regressors)
   
@@ -114,32 +114,32 @@ sarima_prediction <- function(data_train, data_test = NA, prediction_length = 0,
     print(fit)
     tsdisplay(res)
   }
-  
-  # Fit the residuals with a purely seasonal ARMA, of lag 6, and predict over the test_set
-  fitres <- Arima(res, c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 6), include.mean = T, method = method, xreg = train_regressors)
-  res2 <- residuals(fitres)
-  predres <- forecast(fitres, prediction_length, xreg = test_regressors)
-  
-  
-  if (details) {
-    print(fitres)
-    tsdisplay(res2)
-  }
-  
-  # Fit the residuals of the residuals with another purely seasonal ARMA, of lag 5, and predict over the test_set
-  fitres2 <- Arima(res2, c(0, 0, 0), seasonal = list(order = c(1, 1, 0), period = 5), include.mean = T, method = method, xreg = train_regressors)
-  res3 <- residuals(fitres2)
-  predres2 <- forecast(fitres2, prediction_length, xreg = test_regressors)
-  
-  
-  
-  if (details) {
-    print(fitres2)
-    tsdisplay(res3)
-  }
-  
+  # 
+  # # Fit the residuals with a purely seasonal ARMA, of lag 6, and predict over the test_set
+  # fitres <- Arima(res, c(0, 0, 0), seasonal = list(order = c(1, 1, 1), period = 6), include.mean = T, method = method, xreg = train_regressors)
+  # res2 <- residuals(fitres)
+  # predres <- forecast(fitres, prediction_length, xreg = test_regressors)
+  # 
+  # 
+  # if (details) {
+  #   print(fitres)
+  #   tsdisplay(res2)
+  # }
+  # 
+  # # Fit the residuals of the residuals with another purely seasonal ARMA, of lag 5, and predict over the test_set
+  # fitres2 <- Arima(res2, c(0, 0, 0), seasonal = list(order = c(1, 1, 0), period = 5), include.mean = T, method = method, xreg = train_regressors)
+  # res3 <- residuals(fitres2)
+  # predres2 <- forecast(fitres2, prediction_length, xreg = test_regressors)
+  # 
+  # 
+  # 
+  # if (details) {
+  #   print(fitres2)
+  #   tsdisplay(res3)
+  # }
+  # 
   # Put together the previous predictions
-  pred_tot <- pred$mean + predres$mean + predres2$mean
+  pred_tot <- pred$mean #+ predres$mean #+ predres2$mean
   
   # If negative values are predicted, round them to zero.
   pred_tot <- ifelse(pred_tot < 0, 0, pred_tot)
@@ -283,7 +283,7 @@ pred_test_regressors <- function(prediction_start, prediction_length, method = "
   tsdisplay(res, lag.max = 60)
   print(fit)
   pred <- forecast(fit, prediction_length)
-  print((1/prediction_length)*sum((test_vendite$vendite - pred$mean)^2))
+  #print((1/prediction_length)*sum((test_vendite$vendite - pred$mean)^2))
 
   
   # # Fit the residuals with a purely seasonal ARMA, of lag 6, and predict over the test_set
@@ -309,3 +309,48 @@ pred_test_regressors <- function(prediction_start, prediction_length, method = "
 
   return(coredata(pred))
 }
+
+# data_train <- train
+# data_test <- test
+# filtered_data <- rbind(data_train, data_test)
+# filtered_data <- filter(dataset, prod == 1, sottoarea == 1)
+# 
+# # Length of the training set time series
+# train_length <- length(unique(data_train$data))
+# # Length of the test set time series
+# 
+# # Create a timeseries object
+# ts_full <- zoo(filtered_data$vendite, order.by = filtered_data$data)
+# 
+# # Split the full timeseries in two
+# ts_train <- ts_full[1:train_length]
+# ts_test <- ts_full[(train_length+1):(prediction_length+train_length)]
+# 
+# # Use external inputs as regressors.
+# train_regressors <- matrix(filtered_data$vendite_giorn_prod[1:train_length], ncol = 1)
+# 
+# # Need to predict the test regressors!
+# test_regressors <- pred_test_regressors(end(ts_train)+1, prediction_length = prediction_length, num_prod = 1)$mean
+# e <-  data.frame(matrix(NA, nrow = 0, ncol = 7))
+# for (i in 1:4) {
+#   for (j in 1:4) {
+#     for (m in 1:4) {
+#       for (n in 1:4) {
+#         fit <- Arima(ts_train, c(i, 1, j), seasonal = list(order = c(m, 1, n), period = 7), include.mean = T, method = "CSS", xreg = train_regressors)
+#         res <- residuals(fit)
+#         pred <- forecast(fit, prediction_length, xreg = test_regressors)
+#         
+#         sse <- -1
+#         
+#         sse <- (1/prediction_length)*sum((coredata(ts_test) - pred$mean)^2)
+#         cat("AR: ", i, " MA: ", j, " SAR: ", m, " SMA: ", n, " - SSE: ", sse, " - AIC: ", aic = fit$aic, "\n")
+#         e <- rbind(e, data.frame(ar = i, ma = j, sar = m, sma = n, sse = sse, aic = fit$aic, r = fit$sigma2))
+#       }
+#     }
+#   }
+# }
+# View(e)
+
+
+
+
