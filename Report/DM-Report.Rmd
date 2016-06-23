@@ -31,13 +31,14 @@ library(nortestARMA)
 
 ## DATA EXPLORATION:
 This section contains the preliminary operations we performed on the dataset: data visualization, outlier identification, and in general anything that could help us to better understand the dataset and the information it contains.
-    
-* Un paio di plot: boxplot sulle vendite nei vari mesi, plot andamento vendite complessive giorno per giorno, grafici distribuzione di vendita mese/prodotto/giornosettimana, un paio di timeseries dentro
 
+**Initial exploratory analysis**: we identified the *distribution of sales* (cumulative or divided by product) across areas, days of the week, months, years. 
+    Tuples in the dataset are uniquely denoted by the key "Product, Subarea, Date".
+   
+Among other things, we visualized the sales across the days of the week and across months, and also how sales varied depending on the various geographical areas.  
+Below, a brief selection of these plots.
 
-
-    
-```{r echo=F, tidy = T, comment = "#", collapse=T, warning=F}
+```{r echo=F, tidy = T, comment = "#", collapse=F, warning=F, fig.align="center"}
 
 dataset <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 dataset <- dataset[ , !(names(dataset) %in% c("X"))]
@@ -56,7 +57,7 @@ factorVars <- c('zona','area', "sottoarea",
 dataset[factorVars] <- lapply(dataset[factorVars], function(x) as.factor(x))
 
 ```
-```{r echo=F, tidy = T, comment = "#", collapse=T, warning=F}
+```{r echo=F, tidy = T, comment = "#", collapse=F, warning=F, fig.align="center"}
 
 p0 <- ggplot(dataset, aes(giorno_settimana, vendite)) + geom_boxplot(outlier.shape = NA, color = "#004d80", fill = "#008ae6", alpha = 0.7) + scale_y_continuous(limits = c(0, 15)) + 
   ggtitle("Sales for each day of the week, divided by product") + theme_bw() + facet_grid(. ~ prod)
@@ -83,8 +84,6 @@ ggplot(zona_dataset, aes(x = zona, y = vendite, fill = prod)) +
 
 ```
 
-**Initial exploratory analysis**: we identified the *distribution of sales* (cumulative or divided by product) across areas, days of the week, months, years. 
-    Tuples in the dataset are uniquely denoted by the key "Product, Subarea, Date".
     
 **Outlier and missing values**: the dataset doesn't explicitely contains missing values (i.e. NA or similar values). There is however of missing subarea (**51**) and a number of outliers; as areas are mapped to an arbitrary number of subareas (and each subarea is mapped to exactly one area), there is no reason to believe that the missing subarea should negatively affect other predictions. 
 On the other hands, the extremely high sales values at *"30/6/2014"*, and the lack of sales over the period from *"2014-03-19"* to *"2014-03-25"* can be considered outliers and missing values: indeed, these events seems to be purely random and not correlated to any subsequent behaviour of the sales. We decided to replace these values with a prediction (see "Data preparation" for further details regarding the metodology).  
@@ -95,14 +94,14 @@ The null hypothesis of the *Box-Pierce* test is that the signal is made of indep
 
 
     
-```{r echo=F, tidy = T, comment = "#", collapse=T}
+```{r echo=F, tidy = T, comment = "#", collapse=T, fig.align="center"}
 paste("Box-Pierce test for subarea 20, product 1")
 dataset_polimi <- read.csv("../Original data/dataset_polimi.csv", stringsAsFactors=FALSE)
 subarea_20_p1 <- filter(dataset_polimi, Sottoarea == "Sottoarea_20", Categoria_prodotto == "Prodotto_1")
    
 Box.test(subarea_20_p1$Vendite)
 ```
-```{r echo=F, tidy = T, comment = "#", collapse=T}
+```{r echo=F, tidy = T, comment = "#", collapse=T, fig.align="center"}
 paste("Box-Pierce test for subarea 22, product 1, for comparison (this timeseries has a complex structure)")
 Box.test(filter(dataset_polimi, Sottoarea == "Sottoarea_22", Categoria_prodotto == "Prodotto_1")$Vendite)
 
@@ -125,7 +124,7 @@ sliderInput("sottoarea", label = "Select a subarea:",
               min = 1, max = length(unique(dataset_polimi$sottoarea)), value = 20, step = 1)
 ```
 
-```{r echo = FALSE}
+```{r echo = FALSE, fig.align="center"}
 renderPlot({
   selected <- filter(dataset_polimi, sottoarea == input$sottoarea, prod == input$prodotto)
 
@@ -175,7 +174,7 @@ The values replaced are the ones at *"2014-01-01"*, *"30/6/2014"*, and from *"20
 **Coordinates clustering**
 
 As we were provided the GPS coordinates of each subarea, we plotted their latitude and longitute on a map, grouping them by zone and giving each zone a different color. We noted how the division by zones/areas/subareas was partially consistent with what we expected (division by regions, etc...), but it wasn't as *smooth* as one might desire. Morevoer, the division by zones was already quite fine grained (about 20), so we decided to build a higher level hierarchy, to keep into account other geographical subdivision of Italy.
-```{r echo=F, warning=F}
+```{r echo=F, warning=F,fig.align="center"}
   dataset_polimi <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 
     map <- getMap(resolution = "low")
@@ -189,7 +188,7 @@ As we were provided the GPS coordinates of each subarea, we plotted their latitu
 ```
 We decided to perform a **Knee-Elbow** analysis to understand how the subareas could be grouped together in a different way than the one provided by zones and areas. First of all we built a **hierarchical clustering**.
     
-```{r echo=F}
+```{r echo=F, fig.align="center"}
  gps <- read.csv("../Original data/gps.csv", stringsAsFactors = F)
         # init the seed to be able to repeat the experiment
         set.seed(1234)
@@ -245,7 +244,7 @@ output: html_document
 dataset_polimi <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 
 ```
-```{r echo=F, warning=F, tidy = T, comment = "#", collapse=T}
+```{r echo=F, warning=F, tidy = T, comment = "#", collapse=T, fig.align="center"}
    selectInput("cluster", label = "Select a number of clusters:",
                choices = c("3 clusters", "6 clusters", "20 clusters"), selected = "3 clusters")
 
@@ -345,7 +344,6 @@ print(p)
         
 From a simple inspection of the *autocorrelation function*, we can see how the time-series has a clear weekly seasonality.  
 After various trials, by making use of metrics such as the *mean squared error*, the *AIC*[^1], and the estimated variance of the parameters, we opted for a **(2, 1, 1)(4, 1, 4)_7** model.  
-However, the analysis of the residuals showed some traces of a remaining seasonality, of different latency. 
 The residuals of this *Seasonal ARIMA* can be considered white noise (low p-value: very likely to be white noise).
 
     nortestARMA(res_tot, fit$sigma2)
@@ -440,7 +438,15 @@ Among the three models (*Sarima*, *Random Forest*, *XGBoost*), **XGBoost** prove
 
 We decided to keep this result into account, and build an ensemble model that would use the predictions of the three models, and weight them accordingly to the estimated *mean square error* of each product/subareas combination in the test set.
 
-$$E = mc^{2}$$
+For each prediction, we considered the *mean square error* estimated over a test set by the three models, for the same subarea and product of the prediction that is being made.
+
+$$prediction = prediction_{xgboost} \cdot w_{xgboost} + prediction_{forest} \cdot w_{forest} + prediction_{sarima} \cdot w_{sarima}$$
+
+With:
+
+$$w_{xgboost} = \frac{w_{xgboost}^{-1}}{mse_{xgboost}^{-1} + mse_{forest}^{-1} + mse_{sarima}^{-1}}$$
+$$w_{forest} = \frac{w_{forest}^{-1}}{mse_{xgboost}^{-1} + mse_{forest}^{-1} + mse_{sarima}^{-1}}$$
+$$w_{sarima} = \frac{w_{sarima}^{-1}}{mse_{xgboost}^{-1} + mse_{forest}^{-1} + mse_{sarima}^{-1}}$$
 
 Note that the weighting was done without using the predictions for the outlier subareas (the ones for which we predicted 0 sales over the period), to avoid skewing the results with handmade predictions.
 
