@@ -26,7 +26,7 @@ for (i in unique(dataset_polimi_complete$zona)){
 
 
 # ================ HIERARCHICAL CLUSTERING =======================================
-
+dataset_polimi_complete <- read.csv("Modified data/dataset_polimi_final_with_holidays_v2.csv")
 library(GMD)
 
 
@@ -106,5 +106,5 @@ plot(map, xlim = c(-10, 30), ylim = c(40, 50), asp = 1)
 
 
 #======= SAVE STUFF ========================
-write.csv(temp_dataset, file="Modified data/dataset_polimi_clusterized.csv", row.names = FALSE)
+#write.csv(temp_dataset, file="Modified data/dataset_polimi_clusterized.csv", row.names = FALSE)
 

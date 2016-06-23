@@ -14,7 +14,7 @@ library(nortest)
 library(nortestARMA)
 
 prediction_length = 10
-
+setwd("~/DM-Project")
 
 
 # DATA IMPORT AND CLEANING

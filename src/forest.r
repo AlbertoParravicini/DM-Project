@@ -207,7 +207,7 @@ rfm <- function(dataset, predicion_set = NA, prediction_length = 10, num_sottoar
                       formula=vendite ~ zona + area + sottoarea  + prod + giorno_settimana +
                         giorno_mese + giorno_anno + settimana_anno + mese + anno + weekend +
                         stagione + primo_del_mese + cluster3 + cluster6 + cluster20 +
-                        latitudine + longitudine + vacanza,
+                        latitudine + longitudine + vacanza, importance = "impurity",
                       num.trees = num_trees, write.forest = T, verbose = details, num.threads = 4, ...)
 
   
