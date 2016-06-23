@@ -162,7 +162,7 @@ xg_single <- function(n_rounds=45, details=F){
   watchlist <- list(train=xg_train)
   # build model
   xgb_model <- xgb.train(data=xg_train, nrounds = n_rounds, nthread = 4, 
-                         watchlist=watchlist, eta = 0.07, eval.metric="logloss", eval.metric="rmse")
+                         watchlist=watchlist, eta = 0.1, eval.metric="logloss", eval.metric="rmse")
   xgb_pred <- predict(xgb_model, xg_test)
 
   # get some scoring
@@ -190,7 +190,9 @@ xg_single <- function(n_rounds=45, details=F){
   return(data_test)
 }
 
-xgboost_pred <- xg_single(n_rounds=700,details=T)
+xgboost_pred <- xg_single(n_rounds=900,details=T)
+
+bak <- xgboost_pred
 
 # replace negative vendite
 xgboost_pred$vendite <- ifelse(xgboost_pred$vendite < 0, 0, xgboost_pred$vendite)
@@ -201,6 +203,7 @@ for(i in nrow(xgboost_pred)){
   
 }
 
+write.csv(bak, "Modified data/predizione_xgboost_eta0.1_round900.csv")
 
 
 aggiungi_sottoarea_prodotto <- function(dataset, sottoarea, prodotto, valore=0){
