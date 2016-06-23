@@ -350,7 +350,7 @@ compute_errors <- function(prediction, test, write = F) {
     }
   }
   if (write) {
-    write.csv(results, file="Results/risultati_forest_no[20(1-2),78(2),32(2)]_200_trees.csv", row.names=FALSE)
+    write.csv(results, file="Results/risultati_sarima_statistiche.csv", row.names=FALSE)
   }
   return(results)
 }
