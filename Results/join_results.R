@@ -27,6 +27,16 @@ predset$data <- as.Date(as.character(predset$data),format="%Y-%m-%d")
 
 predset <- rbind(dataset, predset)
 
+# Turn some features to factors
+factorVars <- c("zona","area","sottoarea","prod")
+
+predset[factorVars] <- lapply(predset[factorVars], function(x) as.factor(x))
+
+aree_brutte <- filter(predset, sottoarea == "20")
+aree_brutte <- rbind(aree_brutte, filter(predset, sottoarea == "78", prod=="2"))
+aree_brutte <- rbind(aree_brutte, filter(predset, sottoarea == "32", prod=="2"))
+aree_brutte$vendite <- 0
+
 # remove sottoarea 20
 predset <- filter(predset, predset$sottoarea != "20")
 # remove sottoarea 78 prodotto 2
@@ -38,12 +48,11 @@ temp <- filter(predset, sottoarea == "32", prod=="1")
 predset <- filter(predset, sottoarea != "32")
 predset <- rbind(predset, temp)
 
-# Turn some features to factors
-factorVars <- c("zona","area","sottoarea","prod")
-
-predset[factorVars] <- lapply(predset[factorVars], function(x) as.factor(x))
-
 for(i in seq(1:length(models))){
+  
+  aree_brutte[paste("vendite_", models[i], sep = "")] <- NA
+  aree_brutte[paste(used_error, "_", models[i], sep = "")] <- NA
+  
   # Import data
   curr_pred <- read.csv(paste("Results/predizione_", models[i], "_", version, ".csv", sep = ""), stringsAsFactors=FALSE, row.names=NULL)
   curr_pes <- read.csv(paste("Results/pesi_", models[i], ".csv", sep = ""), stringsAsFactors=FALSE, row.names=NULL)
@@ -95,6 +104,12 @@ for(i in 1:nrow(predset)) {
   predset[i,]["vendite"] <- (numerator/denominator)
     
 }
+
+predset <- rbind(predset, aree_brutte)
+
+# Reorder table by key
+predset <- predset[order(predset$zona, predset$area, predset$sottoarea, predset$prod, predset$data) , ]
+predset["data"] <- lapply(predset["data"], function(x) as.factor(x))
 
 # Select columns
 risultati <- predset[, c("zona","area","sottoarea","prod", "data", "vendite")]
