@@ -11,22 +11,23 @@ library(zoo) # For time series
 
 # PARAMS
 models <- c("random_forest", "sarima", "xgboost")
-version <- "FUTURE"
+version <- "TEST"
 used_error <- 'sse'
 
 # Import predset
-dataset <- read.csv("Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE, row.names=NULL)
-dataset <- dataset[,c("zona","area","sottoarea","prod", "data")]
-dataset <- unique(dataset)
-dataset$data <- as.Date(as.character(dataset$data),format="%Y-%m-%d")
-
 predset <- read.csv("Modified data/predset_complete_with_clusters.csv", stringsAsFactors=FALSE, row.names=NULL)
 predset <- predset[,c("zona","area","sottoarea","prod", "data")]
 predset <- unique(predset)
 predset$data <- as.Date(as.character(predset$data),format="%Y-%m-%d")
 
-predset <- rbind(dataset, predset)
-
+if(version == "TEST"){
+  dataset <- read.csv("Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE, row.names=NULL)
+  dataset <- dataset[,c("zona","area","sottoarea","prod", "data","vendite")]
+  colnames(dataset)[which(colnames(dataset) == 'vendite')] <- 'vendite_reali'
+  dataset <- unique(dataset)
+  dataset$data <- as.Date(as.character(dataset$data),format="%Y-%m-%d")
+  predset <- filter(dataset, data >= "2016-05-10")
+}
 # Turn some features to factors
 factorVars <- c("zona","area","sottoarea","prod")
 
@@ -50,8 +51,8 @@ predset <- rbind(predset, temp)
 
 for(i in seq(1:length(models))){
   
-  aree_brutte[paste("vendite_", models[i], sep = "")] <- NA
-  aree_brutte[paste(used_error, "_", models[i], sep = "")] <- NA
+  aree_brutte[paste("vendite_", models[i], sep = "")] <- 0
+  aree_brutte[paste(used_error, "_", models[i], sep = "")] <- 0
   
   # Import data
   curr_pred <- read.csv(paste("Results/predizione_", models[i], "_", version, ".csv", sep = ""), stringsAsFactors=FALSE, row.names=NULL)
