@@ -11,7 +11,7 @@ library(zoo) # For time series
 
 # PARAMS
 models <- c("random_forest", "sarima", "xgboost")
-version <- "TEST"
+version <- "FUTURE"
 used_error <- 'sse'
 
 # Import predset
