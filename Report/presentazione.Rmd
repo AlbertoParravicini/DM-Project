@@ -170,7 +170,11 @@ renderPlot({
 
     
 ## Data preparation
+<<<<<<< HEAD
   + **Basic feature engineering**:
+=======
+  + Basic feature engineering:
+>>>>>>> 3119e0877da2284ce0ff7709201b8fac73ecf07f
     + Day of the week, month, year
     + Month, week of the year, year
     + Weekend
@@ -398,9 +402,16 @@ print(plot)
 ## XGBoost (1/3)
 + **eXtreme Gradient Boosting**: classification and regression algorithm based on gradient boosted trees
 + Characteristics:
+<<<<<<< HEAD
   + Efficiency
   + Accuracy
   + Feasibility
+=======
+    + Efficiency
+    + Accuracy
+    + Feasibility
++ Most successful algorithm used in Kaggle's competitions
+>>>>>>> 3119e0877da2284ce0ff7709201b8fac73ecf07f
 
 ## XGBoost (2/3)
 + Same approach as with Random Forest:
