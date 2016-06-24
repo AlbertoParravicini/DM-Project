@@ -169,7 +169,7 @@ renderPlot({
 
 
     
-## Data preaparation
+## Data preparation
   + Basic feature engineering:
     + Day of the week, month, year
     + Month, week of the year, year
@@ -401,9 +401,9 @@ print(plot)
 ## XGBoost (1/4)
 + eXtreme Gradient Boosting: classification and regression algorithm based on gradient boosted trees
 + Characteristics:
-  + Efficiency
-  + Accuracy
-  + Feasibility
+    + Efficiency
+    + Accuracy
+    + Feasibility
 + Most successful algorithm used in Kaggle's competitions
 
 ## XGBoost (2/4)
