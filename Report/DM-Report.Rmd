@@ -455,7 +455,7 @@ Note that the weighting was done without using the predictions for the outlier s
 | **Sarima** | 2.146717  | 0.3211637 | 1.028536 | - | 
 | **Random Forest** | 2.179245 | 0.2865883 |4.188574 | *Out of bag:* 1.771598 | 
 | **XGBoost** |  1.992626 |  0.2743475 | 4.012398 | *Logloss:* -29.58445 | 
-| **Ensemble** | 1.902922 | - | - | - |
+| **Ensemble** | 1.876493 | - | - | - |
 
 [^1]: http://www4.ncsu.edu/~shu3/Presentation/AIC.pdf
 [^2]: http://www.slideshare.net/ShangxuanZhang/xgboost

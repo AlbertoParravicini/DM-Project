@@ -27,6 +27,8 @@ dataset <- dataset[order(dataset$prod, dataset$sottoarea, dataset$data), ]
 train <- filter(dataset, data <= max(data) - prediction_length)
 test <- filter(dataset, data > max(data) - prediction_length)
 
+test_final <- test
+
 
 random_forest_TEST <- read.csv("~/DM-Project/Results/predizione_random_forest_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
 sarima_TEST <- read.csv("~/DM-Project/Results/predizione_sarima_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
@@ -178,6 +180,14 @@ for (i in  1:nrow(test)) {
 
 summary(test)
 
+# Manually predict outlier areas:
+test_final <- merge(test_final, test, by=c("prod", "sottoarea", "data"), all.x=T)
+colnames(test_final)[which(colnames(test_final) == 'vendite.x')] <- "vendite"
+
+test_final[which(test_final$sottoarea == 20), ]$predizione <- 0
+test_final[which(test_final$sottoarea == 78 && test_final$prod == 2), ]$predizione <- 0
+test_final[which(test_final$sottoarea == 32 && test_final$prod == 2), ]$predizione <- 0
+
 mse_final <- (1/nrow(test))*sum((test$predizione - test$vendite)^2)
 
 print(mse_xgboost)
@@ -185,7 +195,12 @@ print(mse_sarima)
 print(mse_forest)
 print(mse_final)
 
-compute_errors <- function(dataset, write = F) {
+
+mean(compute_errors(test_final))
+
+# HELPER FUNCTIONS
+
+compute_errors <- function(dataset) {
   results <- data.frame(matrix(NA, ncol=6, nrow=0))
   for (s in unique(dataset$sottoarea)){
     local_test <- filter(dataset, sottoarea==s)
@@ -198,13 +213,10 @@ compute_errors <- function(dataset, write = F) {
       results <- rbind(results, temp_row)
     }
   }
-  if (write) {
-    write.csv(results, file="Results/risultati_sarima_statistiche.csv", row.names=FALSE)
-  }
   return(results)
 }
 
-compute_errors_2 <- function(prediction, test, write = F) {
+compute_errors_2 <- function(prediction, test) {
   results <- data.frame(matrix(NA, ncol=6, nrow=0))
   for (s in unique(prediction$sottoarea)){
     local_test <- filter(test, sottoarea==s)
@@ -217,9 +229,6 @@ compute_errors_2 <- function(prediction, test, write = F) {
       temp_row <- data.frame(sottoarea=s, prod=p, sse=sse, mape=mape, maxape=maxape)
       results <- rbind(results, temp_row)
     }
-  }
-  if (write) {
-    write.csv(results, file="Results/risultati_sarima_statistiche.csv", row.names=FALSE)
   }
   return(results)
 }
