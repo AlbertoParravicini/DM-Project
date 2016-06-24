@@ -188,7 +188,7 @@ test_final[which(test_final$sottoarea == 20), ]$predizione <- 0
 test_final[which(test_final$sottoarea == 78 && test_final$prod == 2), ]$predizione <- 0
 test_final[which(test_final$sottoarea == 32 && test_final$prod == 2), ]$predizione <- 0
 
-mse_final <- (1/nrow(test))*sum((test$predizione - test$vendite)^2)
+mse_final <- mean((test$vendite - test$vendite_reali)^2)
 
 print(mse_xgboost)
 print(mse_sarima)
@@ -233,9 +233,19 @@ compute_errors_2 <- function(prediction, test) {
   return(results)
 }
 
-max(abs(test$vendite - test$predizione))/mean(test$vendite)
-max(abs(test$vendite - xgboost_TEST$vendite))/mean(test$vendite)
-max(abs(test$vendite - sarima_TEST$vendite))/mean(test$vendite)
-max(abs(test$vendite - random_forest_TEST$vendite))/mean(test$vendite)
+max(abs(test$vendite_reali - test$vendite_sarima))/mean(test$vendite_reali)
+max(abs(test$vendite_reali - test$vendite_random_forest))/mean(test$vendite_reali)
+max(abs(test$vendite_reali - test$vendite_xgboost))/mean(test$vendite_reali)
+max(abs(test$vendite_reali - test$vendite))/mean(test$vendite_reali)
 
+
+mse_sarima <- mean((test$vendite_reali - test$vendite_sarima)^2)
+mse_forest <- mean((test$vendite_reali - test$vendite_random_forest)^2)
+mse_xgboost <- mean((test$vendite_reali - test$vendite_xgboost)^2)
+mse_final <- mean((test$vendite_reali - test$vendite)^2)
+
+mean(abs(test$vendite_reali - test$vendite_sarima))/mean(test$vendite_reali)
+mean(abs(test$vendite_reali - test$vendite_random_forest))/mean(test$vendite_reali)
+mean(abs(test$vendite_reali - test$vendite_xgboost))/mean(test$vendite_reali)
+mean(abs(test$vendite_reali - test$vendite))/mean(test$vendite_reali)
 
