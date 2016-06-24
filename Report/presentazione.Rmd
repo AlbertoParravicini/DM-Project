@@ -31,11 +31,22 @@ library(nortestARMA)
 
 ## Data exploration
 
-+ Initial exploratory analysis
-    + Cumulative distribution of sales
++ Initial exploratory analysis:
+    + Cumulative *distribution of sales*
     + Distribution of sales by product and zone
-+ Outlier identification and missing values
-+ Understanding the dataset
++ Understanding the dataset:
+    + No explicit missing values in the dataset (i.e. NA or similar values), but...
+    + Missing subarea **51**
++ **Outliers**:
+    + Extremely high sales at *2014-06-30*
+    + No sales from *2014-03-19* to *2014-03-25*
+      
+<!-- 
+areas are mapped to an arbitrary number of subareas (and each subarea is mapped to exactly one area), there is no reason to believe that the missing subarea should negatively affect other predictions
+
+these events seems to be purely random and not correlated to any subsequent behaviour of the sales. We decided to replace these values with a prediction 
+-->
+
 
 
 ## Initial exploratory analysis (1/3)
@@ -101,51 +112,32 @@ ggplot(zona_dataset, aes(x = zona, y = vendite, fill = prod)) +
 
 ```
 
-## Outlier identification and missing values (1/3)
 
-+ No explicit missing values in the dataset (i.e. NA or similar values)
-+ Missing subarea 51
-<!-- 
-areas are mapped to an arbitrary number of subareas (and each subarea is mapped to exactly one area), there is no reason to believe that the missing subarea should negatively affect other predictions
--->
-+ Outliers
-    + Extremely high sales at 2014-06-30
-    + No sales from 2014-03-19 to 2014-03-25
-    + No correlation with any subsequent behaviour of the sales
-<!--
-these events seems to be purely random and not correlated to any subsequent behaviour of the sales. We decided to replace these values with a prediction 
--->
+## Outlier identification, missing values
++ Unusual sales behaviour:
+    + Almost no sales in subarea **20**, subareas **32** and **78** (relatively to product 2).
+    + Do these time series have a predictable internal structure?
+    **Box-Pierce** test of independence: 
+    + *Null hypothesis*: the signal is made of independent observations.
+    
+    
+    `data:  subarea_20_p1$Vendite`  
+    `X-squared = 0.057371, df = 1, p-value = 0.8107`
 
-## Outlier identification and missing values (2/3)
-
-+ Unusual sales behaviour
-    + Subarea 20, and subareas 32 and 78 (relatively to product 2) have mostly no sales
-    + Inpsection of the time-series of subareas to understand if they displayed a predictable internal structure
+    + Using GPS we noted that these locations are unrelated
+    + Not useful in training, removed from the dataset
+    + Predicted sales equal to 0 a-posteriori
+    
 <!--
 decided to inspect the time-series of subareas and of the other subareas, to understand if they displayed a predictable internal structure or if they resembled white noise
--->
-    + Box-Pierce test statistic
-<!--
+
 The *Box-Pierce* test statistic examines if a univariate time-series is composed of independent observations: this is the case of white noise or of constant signals, whose best predictor is the mean of the signal itself.    
+
+a low p-value implies that this isn't the case, and the signal has a more complex internal structure. 
 -->
 
-## Box-Pierce test
-The null hypothesis of the *Box-Pierce* test is that the signal is made of independent observations
-<!-- a low p-value implies that this isn't the case, and the signal has a more complex internal structure. -->
 
 
-```{r echo=F, tidy = T, comment = "#", collapse=T}
-paste("Box-Pierce test for subarea 20, product 1")
-dataset_polimi <- read.csv("../Original data/dataset_polimi.csv", stringsAsFactors=FALSE)
-subarea_20_p1 <- filter(dataset_polimi, Sottoarea == "Sottoarea_20", Categoria_prodotto == "Prodotto_1")
-   
-Box.test(subarea_20_p1$Vendite)
-```
-```{r echo=F, tidy = T, comment = "#", collapse=T}
-paste("Box-Pierce test for subarea 22, product 1")
-# for comparison (this timeseries has a complex structure)
-Box.test(filter(dataset_polimi, Sottoarea == "Sottoarea_22", Categoria_prodotto == "Prodotto_1")$Vendite)
-```
 
 
 ---
@@ -175,40 +167,17 @@ renderPlot({
 ```
 
 
-## Outlier identification and missing values (3/3)
-  + Subarea 20, and subareas 32 and 78 (relatively to product 2) can be considered deterministic signals with mean 0
-  + Not beneficial to be used in training
-    + Removed from the dataset
-    + Predeicted sales equal to 0 a-posteriori
-  + Using geographical coordinates we noted that these areas are close to Milan, Lamezia Terme and Potenza
-    + Unrelated cities that further confirm our hyphotesis
+
     
 ## Data preaparation
-  + Basic feature engineering
-  + Other feature engineering
-  + Coordinates clustering
-  
-## Basic feature engineering
-  + Split dates into:
-    + Day of the week
-    + Day of the month
-    + Day of the year
-    + Month
-    + Week of the year
-    + Year
-  + Add columns:
+  + Basic feature engineering:
+    + Day of the week, month, year
+    + Month, week of the year, year
     + Weekend
-<!--
-is a certain day a saturday or a sunday?
--->
     + Holiday
-<!--
-is a certain day an Italian holiday (Christmas, Easter, etc...)
--->
     + First of the month
-<!--
-we noticed that during the first day of the month sales are generally lower. Out of curiosity, we added a boolean variable to explicitely keep track of whether a day is the first of the month or not.
--->
+  + Other feature engineering: cumulative sales, etc...
+  + Coordinates clustering
 
 ## Other feature engineering (1/4)
   + Features to keep track of cumulative sales over certain periods:
