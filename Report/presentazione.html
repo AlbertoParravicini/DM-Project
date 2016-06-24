@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<!-- saved from url=(0042)http://127.0.0.1:3560/presentazione.Rmd#16 -->
+<html class=""><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    <script type="application/shiny-singletons"></script>  <script type="application/html-dependencies">json2[2014.02.04];jquery[1.11.3];shiny[0.13.2]</script><script src="./presentazione_files/json2-min.js"></script><style type="text/css"></style>
+<script src="./presentazione_files/jquery.min.js"></script>
+<link href="./presentazione_files/shiny.css" rel="stylesheet">
+<script src="./presentazione_files/shiny.min.js"></script>  <script src="./presentazione_files/rmd_loader.js"></script>
+  <link href="./presentazione_files/rmd_loader.css" rel="stylesheet">
+
+<script src="./presentazione_files/rsiframe.js"></script><meta name="0" content="[object Object]"><link rel="stylesheet" type="text/css" href="./presentazione_files/bootstrap.min.css"><script src="./presentazione_files/bootstrap.min.js"></script><script src="./presentazione_files/html5shiv.min.js"></script><script src="./presentazione_files/respond.min.js"></script><link rel="stylesheet" type="text/css" href="./presentazione_files/selectize.bootstrap3.css"><script src="./presentazione_files/selectize.min.js"></script><link rel="stylesheet" type="text/css" href="./presentazione_files/ion.rangeSlider.css"><link rel="stylesheet" type="text/css" href="./presentazione_files/ion.rangeSlider.skinShiny.css"><script src="./presentazione_files/ion.rangeSlider.min.js"></script><script src="./presentazione_files/strftime-min.js"></script><link rel="stylesheet" type="text/css" href="./presentazione_files/rmd_perf.css"><script src="./presentazione_files/rmd_perf.js"></script>
+  <title>Data Mining Project: BIP</title>
+
+  
+  
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <meta name="generator" content="pandoc">
+
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+
+  <link rel="stylesheet" media="all" href="./presentazione_files/fonts.css">
+
+  <link rel="stylesheet" media="all" href="./presentazione_files/default.css">
+  <link rel="stylesheet" media="only screen and (max-device-width: 480px)" href="./presentazione_files/phone.css">
+
+  <!--<base target="_blank">--><base href="." target="_blank">
+
+  <script type="text/javascript">
+    var SLIDE_CONFIG = {
+      // Slide settings
+      settings: {
+                title: 'Data Mining Project: BIP',
+                        useBuilds: true,
+        usePrettify: true,
+        enableSlideAreas: true,
+        enableTouch: true,
+                      },
+
+      // Author information
+      presenters: [
+            {
+        name:  'Alberto Parravicini, Simone Ripamonti, Luca Stornaiuolo' ,
+        company: '',
+        gplus: '',
+        twitter: '',
+        www: '',
+        github: ''
+      },
+            ]
+    };
+  </script>
+
+  <style type="text/css">
+
+    b, strong {
+      font-weight: bold;
+    }
+
+    em {
+      font-style: italic;
+    }
+
+    slides > slide {
+      -webkit-transition: all 0.4s ease-in-out;
+      -moz-transition: all 0.4s ease-in-out;
+      -o-transition: all 0.4s ease-in-out;
+      transition: all 0.4s ease-in-out;
+    }
+
+    .auto-fadein {
+      -webkit-transition: opacity 0.6s ease-in;
+      -webkit-transition-delay: 0.4s;
+      -moz-transition: opacity 0.6s ease-in 0.4s;
+      -o-transition: opacity 0.6s ease-in 0.4s;
+      transition: opacity 0.6s ease-in 0.4s;
+      opacity: 0;
+    }
+
+  </style>
+
+
+
+<script type="text/javascript" src="./presentazione_files/MathJax.js"></script><style type="text/css">.MathJax_Hover_Frame {border-radius: .25em; -webkit-border-radius: .25em; -moz-border-radius: .25em; -khtml-border-radius: .25em; box-shadow: 0px 0px 15px #83A; -webkit-box-shadow: 0px 0px 15px #83A; -moz-box-shadow: 0px 0px 15px #83A; -khtml-box-shadow: 0px 0px 15px #83A; border: 1px solid #A6D ! important; display: inline-block; position: absolute}
+.MathJax_Hover_Arrow {position: absolute; width: 15px; height: 11px; cursor: pointer}
+</style><style type="text/css">#MathJax_About {position: fixed; left: 50%; width: auto; text-align: center; border: 3px outset; padding: 1em 2em; background-color: #DDDDDD; color: black; cursor: default; font-family: message-box; font-size: 120%; font-style: normal; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; border-radius: 15px; -webkit-border-radius: 15px; -moz-border-radius: 15px; -khtml-border-radius: 15px; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+.MathJax_Menu {position: absolute; background-color: white; color: black; width: auto; padding: 2px; border: 1px solid #CCCCCC; margin: 0; cursor: default; font: menu; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+.MathJax_MenuItem {padding: 2px 2em; background: transparent}
+.MathJax_MenuArrow {position: absolute; right: .5em; color: #666666}
+.MathJax_MenuActive .MathJax_MenuArrow {color: white}
+.MathJax_MenuCheck {position: absolute; left: .7em}
+.MathJax_MenuRadioCheck {position: absolute; left: 1em}
+.MathJax_MenuLabel {padding: 2px 2em 4px 1.33em; font-style: italic}
+.MathJax_MenuRule {border-top: 1px solid #CCCCCC; margin: 4px 1px 0px}
+.MathJax_MenuDisabled {color: GrayText}
+.MathJax_MenuActive {background-color: Highlight; color: HighlightText}
+.MathJax_Menu_Close {position: absolute; width: 31px; height: 31px; top: -15px; left: -15px}
+</style><style type="text/css">#MathJax_Zoom {position: absolute; background-color: #F0F0F0; overflow: auto; display: block; z-index: 301; padding: .5em; border: 1px solid black; margin: 0; font-weight: normal; font-style: normal; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; box-shadow: 5px 5px 15px #AAAAAA; -webkit-box-shadow: 5px 5px 15px #AAAAAA; -moz-box-shadow: 5px 5px 15px #AAAAAA; -khtml-box-shadow: 5px 5px 15px #AAAAAA; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_ZoomOverlay {position: absolute; left: 0; top: 0; z-index: 300; display: inline-block; width: 100%; height: 100%; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+#MathJax_ZoomFrame {position: relative; display: inline-block; height: 0; width: 0}
+#MathJax_ZoomEventTrap {position: absolute; left: 0; top: 0; z-index: 302; display: inline-block; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+</style><style type="text/css">.MathJax_Preview {color: #888}
+#MathJax_Message {position: fixed; left: 1em; bottom: 1.5em; background-color: #E6E6E6; border: 1px solid #959595; margin: 0px; padding: 2px 8px; z-index: 102; color: black; font-size: 80%; width: auto; white-space: nowrap}
+#MathJax_MSIE_Frame {position: absolute; top: 0; left: 0; width: 0px; z-index: 101; border: 0px; margin: 0px; padding: 0px}
+.MathJax_Error {color: #CC0000; font-style: italic}
+</style><style type="text/css">.MathJax_Display {text-align: center; margin: 1em 0em; position: relative; display: block; width: 100%}
+.MathJax .merror {background-color: #FFFF88; color: #CC0000; border: 1px solid #CC0000; padding: 1px 3px; font-style: normal; font-size: 90%}
+#MathJax_Tooltip {background-color: InfoBackground; color: InfoText; border: 1px solid black; box-shadow: 2px 2px 5px #AAAAAA; -webkit-box-shadow: 2px 2px 5px #AAAAAA; -moz-box-shadow: 2px 2px 5px #AAAAAA; -khtml-box-shadow: 2px 2px 5px #AAAAAA; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true'); padding: 3px 4px; z-index: 401; position: absolute; left: 0; top: 0; width: auto; height: auto; display: none}
+.MathJax {display: inline; font-style: normal; font-weight: normal; line-height: normal; font-size: 100%; font-size-adjust: none; text-indent: 0; text-align: left; text-transform: none; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; direction: ltr; border: 0; padding: 0; margin: 0}
+.MathJax img, .MathJax nobr, .MathJax a {border: 0; padding: 0; margin: 0; max-width: none; max-height: none; vertical-align: 0; line-height: normal; text-decoration: none}
+img.MathJax_strut {border: 0 !important; padding: 0 !important; margin: 0 !important; vertical-align: 0 !important}
+.MathJax span {display: inline; position: static; border: 0; padding: 0; margin: 0; vertical-align: 0; line-height: normal; text-decoration: none}
+.MathJax nobr {white-space: nowrap ! important}
+.MathJax img {display: inline ! important; float: none ! important}
+.MathJax * {transition: none; -webkit-transition: none; -moz-transition: none; -ms-transition: none; -o-transition: none}
+.MathJax_Processing {visibility: hidden; position: fixed; width: 0; height: 0; overflow: hidden}
+.MathJax_Processed {display: none!important}
+.MathJax_ExBox {display: block; overflow: hidden; width: 1px; height: 60ex}
+.MathJax .MathJax_EmBox {display: block; overflow: hidden; width: 1px; height: 60em}
+.MathJax .MathJax_HitBox {cursor: text; background: white; opacity: 0; filter: alpha(opacity=0)}
+.MathJax .MathJax_HitBox * {filter: none; opacity: 1; background: transparent}
+#MathJax_Tooltip * {filter: none; opacity: 1; background: transparent}
+@font-face {font-family: MathJax_Main; src: url('http://127.0.0.1:3560/file159c4aab3c10_files/mathjax-local/fonts/HTML-CSS/TeX/woff/MathJax_Main-Regular.woff') format('woff'), url('http://127.0.0.1:3560/file159c4aab3c10_files/mathjax-local/fonts/HTML-CSS/TeX/otf/MathJax_Main-Regular.otf') format('opentype')}
+@font-face {font-family: MathJax_Main; src: url('http://127.0.0.1:3560/file159c4aab3c10_files/mathjax-local/fonts/HTML-CSS/TeX/woff/MathJax_Main-Bold.woff') format('woff'), url('http://127.0.0.1:3560/file159c4aab3c10_files/mathjax-local/fonts/HTML-CSS/TeX/otf/MathJax_Main-Bold.otf') format('opentype'); font-weight: bold}
+@font-face {font-family: MathJax_Main; src: url('http://127.0.0.1:3560/file159c4aab3c10_files/mathjax-local/fonts/HTML-CSS/TeX/woff/MathJax_Main-Italic.woff') format('woff'), url('http://127.0.0.1:3560/file159c4aab3c10_files/mathjax-local/fonts/HTML-CSS/TeX/otf/MathJax_Main-Italic.otf') format('opentype'); font-style: italic}
+@font-face {font-family: MathJax_Math; src: url('http://127.0.0.1:3560/file159c4aab3c10_files/mathjax-local/fonts/HTML-CSS/TeX/woff/MathJax_Math-Italic.woff') format('woff'), url('http://127.0.0.1:3560/file159c4aab3c10_files/mathjax-local/fonts/HTML-CSS/TeX/otf/MathJax_Math-Italic.otf') format('opentype'); font-style: italic}
+@font-face {font-family: MathJax_Caligraphic; src: url('http://127.0.0.1:3560/file159c4aab3c10_files/mathjax-local/fonts/HTML-CSS/TeX/woff/MathJax_Caligraphic-Regular.woff') format('woff'), url('http://127.0.0.1:3560/file159c4aab3c10_files/mathjax-local/fonts/HTML-CSS/TeX/otf/MathJax_Caligraphic-Regular.otf') format('opentype')}
+@font-face {font-family: MathJax_Size1; src: url('http://127.0.0.1:3560/file159c4aab3c10_files/mathjax-local/fonts/HTML-CSS/TeX/woff/MathJax_Size1-Regular.woff') format('woff'), url('http://127.0.0.1:3560/file159c4aab3c10_files/mathjax-local/fonts/HTML-CSS/TeX/otf/MathJax_Size1-Regular.otf') format('opentype')}
+@font-face {font-family: MathJax_Size2; src: url('http://127.0.0.1:3560/file159c4aab3c10_files/mathjax-local/fonts/HTML-CSS/TeX/woff/MathJax_Size2-Regular.woff') format('woff'), url('http://127.0.0.1:3560/file159c4aab3c10_files/mathjax-local/fonts/HTML-CSS/TeX/otf/MathJax_Size2-Regular.otf') format('opentype')}
+@font-face {font-family: MathJax_Size3; src: url('http://127.0.0.1:3560/file159c4aab3c10_files/mathjax-local/fonts/HTML-CSS/TeX/woff/MathJax_Size3-Regular.woff') format('woff'), url('http://127.0.0.1:3560/file159c4aab3c10_files/mathjax-local/fonts/HTML-CSS/TeX/otf/MathJax_Size3-Regular.otf') format('opentype')}
+@font-face {font-family: MathJax_Size4; src: url('http://127.0.0.1:3560/file159c4aab3c10_files/mathjax-local/fonts/HTML-CSS/TeX/woff/MathJax_Size4-Regular.woff') format('woff'), url('http://127.0.0.1:3560/file159c4aab3c10_files/mathjax-local/fonts/HTML-CSS/TeX/otf/MathJax_Size4-Regular.otf') format('opentype')}
+.MathJax .noError {vertical-align: ; font-size: 90%; text-align: left; color: black; padding: 1px 3px; border: 1px solid}
+</style></head>
+
+<body class="loaded"><div style="visibility: hidden; overflow: hidden; position: absolute; top: 0px; height: 1px; width: auto; padding: 0px; border: 0px; margin: 0px; text-align: left; text-indent: 0px; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal;"><div id="MathJax_Hidden"></div></div><div id="MathJax_Message" style="display: none;"></div>
+  <div>
+    <div data-display-if="!output.__reactivedoc__" style="display: none;">
+      <div id="rmd_loader_wrapper">
+        <div id="rmd_loader">
+          <img src="./presentazione_files/rmd_loader.gif">
+          <p>Loading</p>
+        </div>
+      </div>
+    </div>
+    <div id="__reactivedoc__" class="shiny-html-output shiny-bound-output">
+
+
+
+
+
+<slides>
+
+  <slide class="title-slide segue nobackground" data-slide-num="1" data-total-slides="34">
+        <!-- The content of this hgroup is replaced programmatically through the slide_config.json. -->
+    <hgroup class="auto-fadein">
+      <h1 data-config-title="">Data Mining Project: BIP</h1>
+      <h2 data-config-subtitle=""><!-- populated from slide_config.json --></h2>
+      <p data-config-presenter="">Alberto Parravicini, Simone Ripamonti, Luca Stornaiuolo<br></p>
+          </hgroup>
+  </slide>
+
+<slide class="" data-slide-num="2" data-total-slides="34"><hgroup><h2>Data exploration</h2></hgroup><article id="data-exploration">
+
+<ul>
+<li>Initial exploratory analysis
+
+<ul>
+<li>Cumulative distribution of sales</li>
+<li>Distribution of sales by product and zone</li>
+</ul></li>
+<li>Outlier identification and missing values</li>
+<li>Understanding the dataset</li>
+</ul>
+
+</article></slide><slide class="" data-slide-num="3" data-total-slides="34"><hgroup><h2>Initial exploratory analysis (1/3)</h2></hgroup><article id="initial-exploratory-analysis-13">
+
+<!--
+  What to say:
+    Key of the dataset is <Product, Subarea, Date>
+    We visualized sales across the days of the week and across months
+    We visualized also how sales varied depending on the various greographical areas
+-->
+
+<p><img src="./presentazione_files/unnamed-chunk-2-1.png" width="720" style="display: block; margin: auto;"></p>
+
+</article></slide><slide class="" data-slide-num="4" data-total-slides="34"><hgroup><h2>Initial exploratory analysis (2/3)</h2></hgroup><article id="initial-exploratory-analysis-23">
+
+<p><img src="./presentazione_files/unnamed-chunk-3-1.png" width="720" style="display: block; margin: auto;"></p>
+
+</article></slide><slide class="" data-slide-num="5" data-total-slides="34"><hgroup><h2>Initial exploratory analysis (3/3)</h2></hgroup><article id="initial-exploratory-analysis-33">
+
+<p><img src="./presentazione_files/unnamed-chunk-4-1.png" width="720" style="display: block; margin: auto;"></p>
+
+</article></slide><slide class="" data-slide-num="6" data-total-slides="34"><hgroup><h2>Outlier identification and missing values (1/3)</h2></hgroup><article id="outlier-identification-and-missing-values-13">
+
+<ul>
+<li>No explicit missing values in the dataset (i.e. NA or similar values)</li>
+<li>Missing subarea 51 <!-- 
+areas are mapped to an arbitrary number of subareas (and each subarea is mapped to exactly one area), there is no reason to believe that the missing subarea should negatively affect other predictions
+--></li>
+<li>Outliers
+
+<ul>
+<li>Extremely high sales at 2014-06-30</li>
+<li>No sales from 2014-03-19 to 2014-03-25</li>
+<li>No correlation with any subsequent behaviour of the sales <!--
+these events seems to be purely random and not correlated to any subsequent behaviour of the sales. We decided to replace these values with a prediction 
+--></li>
+</ul></li>
+</ul>
+
+</article></slide><slide class="" data-slide-num="7" data-total-slides="34"><hgroup><h2>Outlier identification and missing values (2/3)</h2></hgroup><article id="outlier-identification-and-missing-values-23">
+
+<ul>
+<li>Unusual sales behaviour
+
+<ul>
+<li>Subarea 20, and subareas 32 and 78 (relatively to product 2) have mostly no sales</li>
+<li>Inpsection of the time-series of subareas to understand if they displayed a predictable internal structure <!--
+decided to inspect the time-series of subareas and of the other subareas, to understand if they displayed a predictable internal structure or if they resembled white noise
+--></li>
+<li>Box-Pierce test statistic <!--
+The *Box-Pierce* test statistic examines if a univariate time-series is composed of independent observations: this is the case of white noise or of constant signals, whose best predictor is the mean of the signal itself.    
+--></li>
+</ul></li>
+</ul>
+
+</article></slide><slide class="" data-slide-num="8" data-total-slides="34"><hgroup><h2>Box-Pierce test</h2></hgroup><article id="box-pierce-test">
+
+<p>The null hypothesis of the <em>Box-Pierce</em> test is that the signal is made of independent observations <!-- a low p-value implies that this isn't the case, and the signal has a more complex internal structure. --></p>
+
+<pre># [1] "Box-Pierce test for subarea 20, product 1"
+# 
+#   Box-Pierce test
+# 
+# data:  subarea_20_p1$Vendite
+# X-squared = 0.057371, df = 1, p-value = 0.8107</pre>
+
+<pre># [1] "Box-Pierce test for subarea 22, product 1"
+# 
+#   Box-Pierce test
+# 
+# data:  filter(dataset_polimi, Sottoarea == "Sottoarea_22", Categoria_prodotto ==     "Prodotto_1")$Vendite
+# X-squared = 88.688, df = 1, p-value &lt; 2.2e-16</pre>
+
+</article></slide><slide class="" data-slide-num="9" data-total-slides="34"><hgroup><h2>Analyze the time-series!</h2></hgroup><article id="analyze-the-time-series">
+
+<p></p><div class="form-group shiny-input-container">
+<label class="control-label" for="prodotto">Select a product:</label>
+<div>
+<select id="prodotto" tabindex="-1" class="selectized shiny-bound-input" style="display: none;"><option value="1" selected="selected">1</option></select><div class="selectize-control single"><div class="selectize-input items full has-options has-items"><div data-value="1" class="item">1</div><input type="text" autocomplete="off" tabindex="" style="width: 4px;"></div><div class="selectize-dropdown single" style="display: none;"><div class="selectize-dropdown-content"></div></div></div>
+<script type="application/json" data-for="prodotto" data-nonempty="">{}</script>
+</div>
+</div><div class="form-group shiny-input-container">
+<label class="control-label" for="sottoarea">Select a subarea:</label>
+<span class="irs js-irs-0 irs-with-grid"><span class="irs"><span class="irs-line" tabindex="-1"><span class="irs-line-left"></span><span class="irs-line-mid"></span><span class="irs-line-right"></span></span><span class="irs-min" style="visibility: visible;">1</span><span class="irs-max" style="visibility: visible;">144</span><span class="irs-from" style="visibility: hidden;">0</span><span class="irs-to" style="visibility: hidden;">0</span><span class="irs-single" style="left: 12.8124%;">20</span></span><span class="irs-grid" style="width: 92.6667%; left: 3.56667%;"><span class="irs-grid-pol" style="left: 0%"></span><span class="irs-grid-text js-grid-text-0" style="left: 0%; margin-left: -1.83333%;">1</span><span class="irs-grid-pol small" style="left: 6.993006993%"></span><span class="irs-grid-pol small" style="left: 3.496503497%"></span><span class="irs-grid-pol" style="left: 10.48951049%"></span><span class="irs-grid-text js-grid-text-1" style="left: 10.4895%; visibility: visible; margin-left: -2.66667%;">16</span><span class="irs-grid-pol small" style="left: 17.482517483%"></span><span class="irs-grid-pol small" style="left: 13.986013987%"></span><span class="irs-grid-pol" style="left: 20.97902098%"></span><span class="irs-grid-text js-grid-text-2" style="left: 20.979%; visibility: visible; margin-left: -2.66667%;">31</span><span class="irs-grid-pol small" style="left: 27.972027973%"></span><span class="irs-grid-pol small" style="left: 24.475524477%"></span><span class="irs-grid-pol" style="left: 31.46853147%"></span><span class="irs-grid-text js-grid-text-3" style="left: 31.4685%; visibility: visible; margin-left: -2.66667%;">46</span><span class="irs-grid-pol small" style="left: 38.461538463%"></span><span class="irs-grid-pol small" style="left: 34.965034967%"></span><span class="irs-grid-pol" style="left: 41.95804196%"></span><span class="irs-grid-text js-grid-text-4" style="left: 41.958%; margin-left: -2.83333%;">61</span><span class="irs-grid-pol small" style="left: 48.951048953%"></span><span class="irs-grid-pol small" style="left: 45.454545457%"></span><span class="irs-grid-pol" style="left: 52.44755245%"></span><span class="irs-grid-text js-grid-text-5" style="left: 52.4476%; visibility: visible; margin-left: -2.83333%;">76</span><span class="irs-grid-pol small" style="left: 59.440559443%"></span><span class="irs-grid-pol small" style="left: 55.944055947%"></span><span class="irs-grid-pol" style="left: 62.93706294%"></span><span class="irs-grid-text js-grid-text-6" style="left: 62.9371%; visibility: visible; margin-left: -2.66667%;">91</span><span class="irs-grid-pol small" style="left: 69.930069933%"></span><span class="irs-grid-pol small" style="left: 66.433566437%"></span><span class="irs-grid-pol" style="left: 73.42657343%"></span><span class="irs-grid-text js-grid-text-7" style="left: 73.4266%; visibility: visible; margin-left: -3.5%;">106</span><span class="irs-grid-pol small" style="left: 80.419580423%"></span><span class="irs-grid-pol small" style="left: 76.923076927%"></span><span class="irs-grid-pol" style="left: 83.91608392%"></span><span class="irs-grid-text js-grid-text-8" style="left: 83.9161%; margin-left: -3.5%;">121</span><span class="irs-grid-pol small" style="left: 90.909090913%"></span><span class="irs-grid-pol small" style="left: 87.412587417%"></span><span class="irs-grid-pol" style="left: 94.40559441%"></span><span class="irs-grid-text js-grid-text-9" style="left: 94.4056%; visibility: visible; margin-left: -3.5%;">136</span><span class="irs-grid-pol" style="left: 100%"></span><span class="irs-grid-text js-grid-text-10" style="left: 100%; visibility: visible; margin-left: -3.5%;">144</span></span><span class="irs-bar" style="left: 3.66667%; width: 12.3124%;"></span><span class="irs-bar-edge"></span><span class="irs-shadow shadow-single" style="display: none;"></span><span class="irs-slider single" style="left: 12.3124%;"></span></span><input class="js-range-slider irs-hidden-input shiny-bound-input" id="sottoarea" data-min="1" data-max="144" data-from="20" data-step="1" data-grid="true" data-grid-num="9.53333333333333" data-grid-snap="false" data-prettify-separator="," data-keyboard="true" data-keyboard-step="0.699300699300699" data-drag-interval="true" data-data-type="number" readonly="">
+</div><p></p>
+
+<div id="outdce44a9f972c12d6" class="shiny-plot-output shiny-bound-output" style="width: 100% ; height: 400px"><img src="data:image/png;base64,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" width="780" height="400" coordmap="[object Object]"></div>
+
+</article></slide><slide class="" data-slide-num="10" data-total-slides="34"><hgroup><h2>Outlier identification and missing values (3/3)</h2></hgroup><article id="outlier-identification-and-missing-values-33">
+
+<ul>
+<li>Subarea 20, and subareas 32 and 78 (relatively to product 2) can be considered deterministic signals with mean 0</li>
+<li>Not beneficial to be used in training
+
+<ul>
+<li>Removed from the dataset</li>
+<li>Predeicted sales equal to 0 a-posteriori</li>
+</ul></li>
+<li>Using geographical coordinates we noted that these areas are close to Milan, Lamezia Terme and Potenza
+
+<ul>
+<li>Unrelated cities that further confirm our hyphotesis</li>
+</ul></li>
+</ul>
+
+</article></slide><slide class="" data-slide-num="11" data-total-slides="34"><hgroup><h2>Data preaparation</h2></hgroup><article id="data-preaparation">
+
+<ul>
+<li>Basic feature engineering</li>
+<li>Other feature engineering</li>
+<li>Coordinates clustering</li>
+</ul>
+
+</article></slide><slide class="" data-slide-num="12" data-total-slides="34"><hgroup><h2>Basic feature engineering</h2></hgroup><article id="basic-feature-engineering">
+
+<ul>
+<li>Split dates into:
+
+<ul>
+<li>Day of the week</li>
+<li>Day of the month</li>
+<li>Day of the year</li>
+<li>Month</li>
+<li>Week of the year</li>
+<li>Year</li>
+</ul></li>
+<li>Add columns:
+
+<ul>
+<li>Weekend <!--
+is a certain day a saturday or a sunday?
+--></li>
+<li>Holiday <!--
+is a certain day an Italian holiday (Christmas, Easter, etc...)
+--></li>
+<li>First of the month <!--
+we noticed that during the first day of the month sales are generally lower. Out of curiosity, we added a boolean variable to explicitely keep track of whether a day is the first of the month or not.
+--></li>
+</ul></li>
+</ul>
+
+</article></slide><slide class="" data-slide-num="13" data-total-slides="34"><hgroup><h2>Other feature engineering (1/4)</h2></hgroup><article id="other-feature-engineering-14">
+
+<ul>
+<li>Features to keep track of cumulative sales over certain periods:
+
+<ul>
+<li>Cumulative sums by product and subarea, over each week, month and year</li>
+<li>Aggregate sales of the entire company, day by day, by product and cumulative</li>
+</ul></li>
+<li>Not possible to compute directly these values for dates above the one in the dataset</li>
+<li>Sarima models to predict each of these time-series</li>
+</ul>
+
+<!-- 
+The idea is that using a Sarima model built specifically for a certain time-series (e.g. the aggregate sales) can lead to a highly accurate prediction that can be beneficial to the other models. The cumulative sales didn't prove to be very useful, but the predicion of the aggregate sales improved sightly our results.
+
+Note that to perform predictions over test and validation sets we also used the predictions of these timeseries, instead of the real values that we had at our disposal (used for the training, obviously): if we used the latter, the results would be faked, as we'd be employing information unavailable in a real prediction.
+-->
+
+</article></slide><slide class="far-past" data-slide-num="14" data-total-slides="34"><hgroup><h2>Other feature engineering (2/4)</h2></hgroup><article id="other-feature-engineering-24">
+
+<ul>
+<li>Replaced outliers and missing values identified with a prediction using a Random Forest model
+
+<ul>
+<li>Sarima model wouldn't be as effective since these values are located in the middle of the dataset</li>
+<li>Replaced values are the ones at <em>"2014-01-01"</em>, <em>"2014-6-30"</em>, and from <em>"2014-03-19"</em> to <em>"2014-03-25"</em></li>
+</ul></li>
+</ul>
+
+<!-- 
+(in the 2 following years, sales at *"01-01"* are usually rather low, but never completely 0 as in 2014)
+-->
+
+</article></slide><slide class="past" data-slide-num="15" data-total-slides="34"><hgroup><h2>Other feature engineering (3/4)</h2></hgroup><article id="other-feature-engineering-34">
+
+<ul>
+<li>Coordinates clustering
+
+<ul>
+<li>Division by zones/areas partially consistent with what expected</li>
+<li>But not as smooth as one might desire</li>
+<li>We choose to build a higher level hierarchy <img src="./presentazione_files/unnamed-chunk-10-1.png" width="720" style="display: block; margin: auto;"></li>
+</ul></li>
+</ul>
+
+</article></slide><slide class="current" data-slide-num="16" data-total-slides="34"><hgroup><h2>Other feature engineering (4/4)</h2></hgroup><article id="other-feature-engineering-44">
+
+<ul>
+<li>We performed a Knee-Elbow analysis</li>
+<li>Chosen three different clustering for subareas:
+
+<ul>
+<li>3 cluster grouping: North, Center and South Italy</li>
+<li>6 cluster grouping: value suggested by the Knee-Elbow analysis</li>
+<li>20 cluster grouping: to distinguish the different Italian regions</li>
+</ul></li>
+</ul>
+
+</article></slide><slide class="next" data-slide-num="17" data-total-slides="34"><hgroup><h2>Analyze the clusters!</h2></hgroup><article id="analyze-the-clusters">
+
+<p></p><div class="form-group shiny-input-container">
+<label class="control-label" for="cluster">Select a number of clusters:</label>
+<div>
+<select id="cluster" tabindex="-1" class="selectized shiny-bound-input" style="display: none;"><option value="6 clusters" selected="selected">6 clusters</option></select><div class="selectize-control single"><div class="selectize-input items full has-options has-items"><div data-value="6 clusters" class="item">6 clusters</div><input type="text" autocomplete="off" tabindex="" style="width: 4px;"></div><div class="selectize-dropdown single" style="display: none;"><div class="selectize-dropdown-content"></div></div></div>
+<script type="application/json" data-for="cluster" data-nonempty="">{}</script>
+</div>
+</div><div id="out3871faf0a882e0bf" class="shiny-plot-output shiny-bound-output" style="width: 100% ; height: 400px"><img src="data:image/png;base64,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" width="780" height="400" coordmap="[object Object]"></div><p></p>
+
+</article></slide><slide class="far-next" data-slide-num="18" data-total-slides="34"><hgroup><h2>Model Building</h2></hgroup><article id="model-building">
+
+<ul>
+<li>Seasonal ARIMA</li>
+<li>Random Forest</li>
+<li>XGBoost</li>
+<li>Results and Ensemble</li>
+</ul>
+
+</article></slide><slide class="" data-slide-num="19" data-total-slides="34"><hgroup><h2>Seasonal ARIMA (1/4)</h2></hgroup><article id="seasonal-arima-14">
+
+<ul>
+<li>Seasonal Auto-Regressive Integrated Moving Average</li>
+<li>Capable of fitting structure in complex time series
+
+<ul>
+<li>Even those with seasonalities or trends</li>
+</ul></li>
+<li>One different model for each subarea and product
+
+<ul>
+<li>Assumption that all time-series could be fitted with a model of the same order</li>
+<li>Few exceptions where Random Forest and XGBoost outperformed Sarima</li>
+</ul></li>
+<li><strong>Auto-correlation</strong>, <strong>Partial auto-correlation</strong>, to understand the <strong>MA</strong> and <strong>AR</strong></li>
+<li><strong>Neyman Smooth Tests of Normality</strong> to check if the residuals of the training can be considered <strong>white noise</strong></li>
+</ul>
+
+</article></slide><slide class="" data-slide-num="20" data-total-slides="34"><hgroup><h2>Seasonal ARIMA (2/4)</h2></hgroup><article id="seasonal-arima-24">
+
+<p><img src="./presentazione_files/unnamed-chunk-13-1.png" width="720" style="display: block; margin: auto;"></p>
+
+</article></slide><slide class="" data-slide-num="21" data-total-slides="34"><hgroup><h2>Seasonal ARIMA (3/4)</h2></hgroup><article id="seasonal-arima-34">
+
+<p><img src="./presentazione_files/unnamed-chunk-14-1.png" width="720" style="display: block; margin: auto;"></p>
+
+</article></slide><slide class="" data-slide-num="22" data-total-slides="34"><hgroup><h2>Seasonal ARIMA (4/4)</h2></hgroup><article id="seasonal-arima-44">
+
+<ul>
+<li>Clear weekly seasonality</li>
+<li>Residuals can be considered white noise (low p-value)</li>
+</ul>
+
+<pre class="prettyprint lang-r"><span class="pln">    nortestARMA</span><span class="pun">(</span><span class="pln">res_tot</span><span class="pun">,</span><span class="pln"> fit</span><span class="pun">$</span><span class="pln">sigma2</span><span class="pun">)</span><span class="pln">
+    </span><span class="com">#$pvalsdmuest</span><span class="pln">
+    </span><span class="com">#[1] 4.927925e-06</span></pre>
+
+<ul>
+<li>Overall company sales, daily aggregated, as exogen input of the model</li>
+<li><strong>CSS-ML</strong> method to optimize prediction of aggregated sales (better result, but sometimes fails to converge)</li>
+<li><strong>CSS</strong> method to optimize prediction of single subareas (less precise, but always converge)</li>
+</ul>
+
+</article></slide><slide class="" data-slide-num="23" data-total-slides="34"><hgroup><h2>Random Forest (1/3)</h2></hgroup><article id="random-forest-13">
+
+<ul>
+<li>Flexible and robust</li>
+<li>Importance plot</li>
+</ul>
+
+<p><img src="./presentazione_files/unnamed-chunk-16-1.png" width="720" style="display: block; margin: auto;"></p>
+
+</article></slide><slide class="" data-slide-num="24" data-total-slides="34"><hgroup><h2>Random Forest (2/3)</h2></hgroup><article id="random-forest-23">
+
+<ul>
+<li>We tried two approaches:</li>
+<li>Single model that uses the whole dataset</li>
+<li>Set of models, one for each subarea/product combination</li>
+<li>At first second approach seemed to yield better results</li>
+<li>Parameter tuning on the first approach proved it to be superior</li>
+<li>Single model required a higher number of trees than each of the <em>multiple model</em> forests</li>
+<li><strong>Out of bag</strong> error was the main metric used to compare the different random forests model</li>
+<li>We also employed <em>mean square error</em>, <em>MAPE</em> and <em>MAX APE</em>, computed on a test set.</li>
+</ul>
+
+</article></slide><slide class="" data-slide-num="25" data-total-slides="34"><hgroup><h2>Random Forest (3/3)</h2></hgroup><article id="random-forest-33">
+
+<ul>
+<li>We used <strong>ranger</strong> package for R</li>
+<li>Much faster than the commonly used <strong>randomForest</strong></li>
+<li>Built-in multi-threading</li>
+<li>Final model used 1200 trees</li>
+<li>Using more trees didn't reduce by a significant amount the <em>out of bag</em> error and the <em>MSE</em> on the test set, and proved to be computationally prohibitive</li>
+</ul>
+
+<pre class="prettyprint lang-r"><span class="pln">    rfs_model </span><span class="pun">&lt;-</span><span class="pln"> ranger</span><span class="pun">(</span><span class="pln">train_set</span><span class="pun">,</span><span class="pln"> formula</span><span class="pun">=</span><span class="pln">vendite </span><span class="pun">~</span><span class="pln"> </span><span class="pun">(</span><span class="pln">zona </span><span class="pun">+</span><span class="pln"> area </span><span class="pun">+</span><span class="pln"> sottoarea  </span><span class="pun">+</span><span class="pln"> prod </span><span class="pun">+</span><span class="pln"> giorno_mese </span><span class="pun">+</span><span class="pln"> giorno_anno </span><span class="pun">+</span><span class="pln"> settimana_anno </span><span class="pun">+</span><span class="pln"> mese </span><span class="pun">+</span><span class="pln"> anno </span><span class="pun">+</span><span class="pln"> stagione </span><span class="pun">+</span><span class="pln"> primo_del_mese </span><span class="pun">+</span><span class="pln"> cluster3 </span><span class="pun">+</span><span class="pln"> cluster6 </span><span class="pun">+</span><span class="pln"> cluster20 </span><span class="pun">+</span><span class="pln"> latitudine </span><span class="pun">+</span><span class="pln"> longitudine </span><span class="pun">+</span><span class="pln"> giorno_settimana </span><span class="pun">+</span><span class="pln"> weekend </span><span class="pun">+</span><span class="pln"> vacanza</span><span class="pun">),</span><span class="pln"> num.trees </span><span class="pun">=</span><span class="pln"> </span><span class="lit">1200</span><span class="pun">,</span><span class="pln"> write.forest </span><span class="pun">=</span><span class="pln"> T</span><span class="pun">,</span><span class="pln"> verbose </span><span class="pun">=</span><span class="pln"> T</span><span class="pun">,</span><span class="pln"> num.threads </span><span class="pun">=</span><span class="pln"> </span><span class="lit">4</span><span class="pun">,</span><span class="pln"> </span><span class="lit">...</span><span class="pun">)</span></pre>
+
+</article></slide><slide class="" data-slide-num="26" data-total-slides="34"><hgroup><h2>XGBoost (1/4)</h2></hgroup><article id="xgboost-14">
+
+<ul>
+<li>eXtreme Gradient Boosting: classification and regression algorithm based on gradient boosted trees</li>
+<li>Characteristics:</li>
+<li>Efficiency</li>
+<li>Accuracy</li>
+<li>Feasibility</li>
+<li>Most successful algorithm used in Kaggle's competitions</li>
+</ul>
+
+</article></slide><slide class="" data-slide-num="27" data-total-slides="34"><hgroup><h2>XGBoost (2/4)</h2></hgroup><article id="xgboost-24">
+
+<ul>
+<li>Same approach as with Random Forest:
+
+<ul>
+<li>Single model that uses the whole dataset</li>
+<li>Set of models, one for each subarea/product combination</li>
+</ul></li>
+<li>Used XGBoost's crossvalidation function to get insights of the quality of the two predictive models</li>
+<li>Built-in metrics:
+
+<ul>
+<li><strong>root mean square error</strong> (RMSE)</li>
+<li><strong>logarithmic loss</strong> (logloss)</li>
+<li><strong>mean average precision</strong> (MAE)</li>
+</ul></li>
+<li>Tried different:
+
+<ul>
+<li>Set of features</li>
+<li>Values of tuning parameters (<strong>nrounds</strong>, <strong>eta</strong>, <strong>gamma</strong>, …)</li>
+</ul></li>
+</ul>
+
+<!--    
+
+```r
+xgb.cv(data = xg_train, nrounds = n_rounds, nthread = 4, watchlist = list(train = xg_train), 
+    eta = 0.07, nfold = 10, eval.metric = c("logloss", "rmse", "map"), tree_method = "exact")
+```
+-->
+
+</article></slide><slide class="" data-slide-num="28" data-total-slides="34"><hgroup><h2>XGBoost (3/4)</h2></hgroup><article id="xgboost-34">
+
+<ul>
+<li>Used XGBoost's watchlist and evalutaion metric to compare training and test error</li>
+<li>Performed early stopping of training to prevent overfitting of the training data</li>
+</ul>
+
+<pre class="prettyprint lang-r"><span class="pln">    xgb_model </span><span class="pun">&lt;-</span><span class="pln"> xgb.train</span><span class="pun">(</span><span class="pln">data</span><span class="pun">=</span><span class="pln">xg_train</span><span class="pun">,</span><span class="pln"> nrounds </span><span class="pun">=</span><span class="pln"> n_rounds</span><span class="pun">,</span><span class="pln">
+     nthread </span><span class="pun">=</span><span class="pln"> </span><span class="lit">4</span><span class="pun">,</span><span class="pln"> eta </span><span class="pun">=</span><span class="pln"> eta_value</span><span class="pun">,</span><span class="pln"> watchlist </span><span class="pun">=</span><span class="pln"> list</span><span class="pun">(</span><span class="pln">train</span><span class="pun">=</span><span class="pln">xg_train</span><span class="pun">,</span><span class="pln">
+     test</span><span class="pun">=</span><span class="pln">xg_test</span><span class="pun">),</span><span class="pln"> early.stop.round </span><span class="pun">=</span><span class="pln"> </span><span class="lit">5</span><span class="pun">,</span><span class="pln"> maximize </span><span class="pun">=</span><span class="pln"> F</span><span class="pun">)</span><span class="pln">
+    xgb_pred </span><span class="pun">&lt;-</span><span class="pln"> predict</span><span class="pun">(</span><span class="pln">xgb_model</span><span class="pun">,</span><span class="pln"> xg_test</span><span class="pun">)</span></pre>
+
+<ul>
+<li>Predictions on the test data compared with the real data using:
+
+<ul>
+<li>mean absolute percentage error (MAPE)</li>
+<li>max absolute percentage error</li>
+</ul></li>
+<li>Results showed that the single model was performing slightly better than the <em>multiple</em> one</li>
+</ul>
+
+</article></slide><slide class="" data-slide-num="29" data-total-slides="34"><hgroup><h2>XGBoost (4/4)</h2></hgroup><article id="xgboost-44">
+
+<ul>
+<li>Final model
+
+<ul>
+<li>features: <em>zona, area, sottoarea, prod, giorno_settimana, giorno_mese, giorno_anno, settimana_anno, mese, anno, weekend, primo_del_mese, vacanza, stagione, cluster3, cluster6, cluster20, latitudine, longitudine</em></li>
+<li>label: <em>vendite</em></li>
+<li>nrounds: 900</li>
+<li>eta: 0.1</li>
+<li>gamma: default</li>
+</ul></li>
+</ul>
+
+</article></slide><slide class="" data-slide-num="30" data-total-slides="34"><hgroup><h2>Results and Ensemble (1/5)</h2></hgroup><article id="results-and-ensemble-15">
+
+<ul>
+<li><strong>XGBoost</strong> proved to be the most powerful model</li>
+<li>We looked at <strong>mean square error</strong> over the various product/subareas combination</li>
+<li>In some occasions <em>Sarima</em> and <em>Random Forest</em> would provide better predictions</li>
+<li>We decided to take this into account and build an ensemble model</li>
+<li>Uses predictions of the three models</li>
+<li>Predictions weighted according to the estimated <em>mean square error</em> of each produc/subarea combination in the test set</li>
+</ul>
+
+</article></slide><slide class="" data-slide-num="31" data-total-slides="34"><hgroup><h2>Results and Ensemble (2/5)</h2></hgroup><article id="results-and-ensemble-25">
+
+<p><span class="MathJax_Preview"></span><div class="MathJax_Display" role="textbox" aria-readonly="true" style="text-align: center;"><span class="MathJax" id="MathJax-Element-1-Frame"><nobr><span class="math" id="MathJax-Span-1" style="width: 18.328em; display: inline-block;"><span style="display: inline-block; position: relative; width: 17.782em; height: 0px; font-size: 103%;"><span style="position: absolute; clip: rect(1.823em 1000em 3.158em -0.604em); top: -2.667em; left: 0.003em;"><span class="mrow" id="MathJax-Span-2"><span class="mi" id="MathJax-Span-3" style="font-family: MathJax_Math; font-style: italic;">p</span><span class="mi" id="MathJax-Span-4" style="font-family: MathJax_Math; font-style: italic;">r</span><span class="mi" id="MathJax-Span-5" style="font-family: MathJax_Math; font-style: italic;">e</span><span class="mi" id="MathJax-Span-6" style="font-family: MathJax_Math; font-style: italic;">d<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-7" style="font-family: MathJax_Math; font-style: italic;">i</span><span class="mi" id="MathJax-Span-8" style="font-family: MathJax_Math; font-style: italic;">c</span><span class="mi" id="MathJax-Span-9" style="font-family: MathJax_Math; font-style: italic;">t</span><span class="mi" id="MathJax-Span-10" style="font-family: MathJax_Math; font-style: italic;">i</span><span class="mi" id="MathJax-Span-11" style="font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-12" style="font-family: MathJax_Math; font-style: italic;">n</span><span class="mo" id="MathJax-Span-13" style="font-family: MathJax_Main; padding-left: 0.306em;">=</span><span class="mi" id="MathJax-Span-14" style="font-family: MathJax_Math; font-style: italic; padding-left: 0.306em;">p</span><span class="mi" id="MathJax-Span-15" style="font-family: MathJax_Math; font-style: italic;">r</span><span class="mi" id="MathJax-Span-16" style="font-family: MathJax_Math; font-style: italic;">e</span><span class="mi" id="MathJax-Span-17" style="font-family: MathJax_Math; font-style: italic;">d<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-18" style="font-family: MathJax_Math; font-style: italic;">i</span><span class="mi" id="MathJax-Span-19" style="font-family: MathJax_Math; font-style: italic;">c</span><span class="mi" id="MathJax-Span-20" style="font-family: MathJax_Math; font-style: italic;">t</span><span class="mi" id="MathJax-Span-21" style="font-family: MathJax_Math; font-style: italic;">i</span><span class="mi" id="MathJax-Span-22" style="font-family: MathJax_Math; font-style: italic;">o</span><span class="msubsup" id="MathJax-Span-23"><span style="display: inline-block; position: relative; width: 3.037em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.543em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-24" style="font-family: MathJax_Math; font-style: italic;">n</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; top: -2.121em; left: 0.61em;"><span class="texatom" id="MathJax-Span-25"><span class="mrow" id="MathJax-Span-26"><span class="mi" id="MathJax-Span-27" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">x</span><span class="mi" id="MathJax-Span-28" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">g<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-29" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">b</span><span class="mi" id="MathJax-Span-30" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-31" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-32" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-33" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">t</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span><span class="mo" id="MathJax-Span-34" style="font-family: MathJax_Main; padding-left: 0.246em;">⋅</span><span class="msubsup" id="MathJax-Span-35" style="padding-left: 0.246em;"><span style="display: inline-block; position: relative; width: 3.158em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.543em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-36" style="font-family: MathJax_Math; font-style: italic;">w</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; top: -2.121em; left: 0.731em;"><span class="texatom" id="MathJax-Span-37"><span class="mrow" id="MathJax-Span-38"><span class="mi" id="MathJax-Span-39" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">x</span><span class="mi" id="MathJax-Span-40" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">g<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-41" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">b</span><span class="mi" id="MathJax-Span-42" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-43" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-44" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-45" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">t</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span><span class="mo" id="MathJax-Span-46" style="font-family: MathJax_Main; padding-left: 0.246em;">+</span></span><span style="display: inline-block; width: 0px; height: 2.673em;"></span></span></span><span style="border-left-width: 0.003em; border-left-style: solid; display: inline-block; overflow: hidden; width: 0px; height: 1.128em; vertical-align: -0.372em;"></span></span></nobr></span></div><script type="math/tex; mode=display" id="MathJax-Element-1">prediction = prediction_{xgboost} \cdot w_{xgboost} +</script> <span class="MathJax_Preview"></span><div class="MathJax_Display" role="textbox" aria-readonly="true" style="text-align: center;"><span class="MathJax" id="MathJax-Element-2-Frame"><nobr><span class="math" id="MathJax-Span-47" style="width: 11.532em; display: inline-block;"><span style="display: inline-block; position: relative; width: 11.168em; height: 0px; font-size: 103%;"><span style="position: absolute; clip: rect(1.823em 1000em 3.158em -0.604em); top: -2.667em; left: 0.003em;"><span class="mrow" id="MathJax-Span-48"><span class="mi" id="MathJax-Span-49" style="font-family: MathJax_Math; font-style: italic;">p</span><span class="mi" id="MathJax-Span-50" style="font-family: MathJax_Math; font-style: italic;">r</span><span class="mi" id="MathJax-Span-51" style="font-family: MathJax_Math; font-style: italic;">e</span><span class="mi" id="MathJax-Span-52" style="font-family: MathJax_Math; font-style: italic;">d<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-53" style="font-family: MathJax_Math; font-style: italic;">i</span><span class="mi" id="MathJax-Span-54" style="font-family: MathJax_Math; font-style: italic;">c</span><span class="mi" id="MathJax-Span-55" style="font-family: MathJax_Math; font-style: italic;">t</span><span class="mi" id="MathJax-Span-56" style="font-family: MathJax_Math; font-style: italic;">i</span><span class="mi" id="MathJax-Span-57" style="font-family: MathJax_Math; font-style: italic;">o</span><span class="msubsup" id="MathJax-Span-58"><span style="display: inline-block; position: relative; width: 2.673em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.543em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-59" style="font-family: MathJax_Math; font-style: italic;">n</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; top: -2.06em; left: 0.61em;"><span class="texatom" id="MathJax-Span-60"><span class="mrow" id="MathJax-Span-61"><span class="mi" id="MathJax-Span-62" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">f<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.064em;"></span></span><span class="mi" id="MathJax-Span-63" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-64" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">r</span><span class="mi" id="MathJax-Span-65" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">e</span><span class="mi" id="MathJax-Span-66" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-67" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">t</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span><span class="mo" id="MathJax-Span-68" style="font-family: MathJax_Main; padding-left: 0.246em;">⋅</span><span class="msubsup" id="MathJax-Span-69" style="padding-left: 0.246em;"><span style="display: inline-block; position: relative; width: 2.794em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.543em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-70" style="font-family: MathJax_Math; font-style: italic;">w</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; top: -2.06em; left: 0.731em;"><span class="texatom" id="MathJax-Span-71"><span class="mrow" id="MathJax-Span-72"><span class="mi" id="MathJax-Span-73" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">f<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.064em;"></span></span><span class="mi" id="MathJax-Span-74" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-75" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">r</span><span class="mi" id="MathJax-Span-76" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">e</span><span class="mi" id="MathJax-Span-77" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-78" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">t</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span><span class="mo" id="MathJax-Span-79" style="font-family: MathJax_Main; padding-left: 0.246em;">+</span></span><span style="display: inline-block; width: 0px; height: 2.673em;"></span></span></span><span style="border-left-width: 0.003em; border-left-style: solid; display: inline-block; overflow: hidden; width: 0px; height: 1.128em; vertical-align: -0.372em;"></span></span></nobr></span></div><script type="math/tex; mode=display" id="MathJax-Element-2">prediction_{forest} \cdot w_{forest} +</script> <span class="MathJax_Preview"></span><div class="MathJax_Display" role="textbox" aria-readonly="true" style="text-align: center;"><span class="MathJax" id="MathJax-Element-3-Frame"><nobr><span class="math" id="MathJax-Span-80" style="width: 11.168em; display: inline-block;"><span style="display: inline-block; position: relative; width: 10.804em; height: 0px; font-size: 103%;"><span style="position: absolute; clip: rect(1.823em 1000em 3.037em -0.604em); top: -2.667em; left: 0.003em;"><span class="mrow" id="MathJax-Span-81"><span class="mi" id="MathJax-Span-82" style="font-family: MathJax_Math; font-style: italic;">p</span><span class="mi" id="MathJax-Span-83" style="font-family: MathJax_Math; font-style: italic;">r</span><span class="mi" id="MathJax-Span-84" style="font-family: MathJax_Math; font-style: italic;">e</span><span class="mi" id="MathJax-Span-85" style="font-family: MathJax_Math; font-style: italic;">d<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-86" style="font-family: MathJax_Math; font-style: italic;">i</span><span class="mi" id="MathJax-Span-87" style="font-family: MathJax_Math; font-style: italic;">c</span><span class="mi" id="MathJax-Span-88" style="font-family: MathJax_Math; font-style: italic;">t</span><span class="mi" id="MathJax-Span-89" style="font-family: MathJax_Math; font-style: italic;">i</span><span class="mi" id="MathJax-Span-90" style="font-family: MathJax_Math; font-style: italic;">o</span><span class="msubsup" id="MathJax-Span-91"><span style="display: inline-block; position: relative; width: 2.976em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.543em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-92" style="font-family: MathJax_Math; font-style: italic;">n</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; top: -2.121em; left: 0.61em;"><span class="texatom" id="MathJax-Span-93"><span class="mrow" id="MathJax-Span-94"><span class="mi" id="MathJax-Span-95" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-96" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">a</span><span class="mi" id="MathJax-Span-97" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">r</span><span class="mi" id="MathJax-Span-98" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">i</span><span class="mi" id="MathJax-Span-99" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">m</span><span class="mi" id="MathJax-Span-100" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">a</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span><span class="mo" id="MathJax-Span-101" style="font-family: MathJax_Main; padding-left: 0.246em;">⋅</span><span class="msubsup" id="MathJax-Span-102" style="padding-left: 0.246em;"><span style="display: inline-block; position: relative; width: 3.098em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.543em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-103" style="font-family: MathJax_Math; font-style: italic;">w</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; top: -2.121em; left: 0.731em;"><span class="texatom" id="MathJax-Span-104"><span class="mrow" id="MathJax-Span-105"><span class="mi" id="MathJax-Span-106" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-107" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">a</span><span class="mi" id="MathJax-Span-108" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">r</span><span class="mi" id="MathJax-Span-109" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">i</span><span class="mi" id="MathJax-Span-110" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">m</span><span class="mi" id="MathJax-Span-111" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">a</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 2.673em;"></span></span></span><span style="border-left-width: 0.003em; border-left-style: solid; display: inline-block; overflow: hidden; width: 0px; height: 1.066em; vertical-align: -0.247em;"></span></span></nobr></span></div><script type="math/tex; mode=display" id="MathJax-Element-3">prediction_{sarima} \cdot w_{sarima}</script></p>
+
+</article></slide><slide class="" data-slide-num="32" data-total-slides="34"><hgroup><h2>Results and Ensemble (3/5)</h2></hgroup><article id="results-and-ensemble-35">
+
+<p>With:</p>
+
+<p><span class="MathJax_Preview"></span><div class="MathJax_Display" role="textbox" aria-readonly="true" style="text-align: center;"><span class="MathJax" id="MathJax-Element-4-Frame"><nobr><span class="math" id="MathJax-Span-112" style="width: 20.452em; display: inline-block;"><span style="display: inline-block; position: relative; width: 19.845em; height: 0px; font-size: 103%;"><span style="position: absolute; clip: rect(0.731em 1000em 4.129em -0.543em); top: -2.667em; left: 0.003em;"><span class="mrow" id="MathJax-Span-113"><span class="msubsup" id="MathJax-Span-114"><span style="display: inline-block; position: relative; width: 3.158em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.543em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-115" style="font-family: MathJax_Math; font-style: italic;">w</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; top: -2.121em; left: 0.731em;"><span class="texatom" id="MathJax-Span-116"><span class="mrow" id="MathJax-Span-117"><span class="mi" id="MathJax-Span-118" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">x</span><span class="mi" id="MathJax-Span-119" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">g<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-120" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">b</span><span class="mi" id="MathJax-Span-121" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-122" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-123" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-124" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">t</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span><span class="mo" id="MathJax-Span-125" style="font-family: MathJax_Main; padding-left: 0.306em;">=</span><span class="mfrac" id="MathJax-Span-126" style="padding-left: 0.428em; padding-right: 0.124em;"><span style="display: inline-block; position: relative; width: 15.052em; height: 0px;"><span style="position: absolute; clip: rect(3.037em 1000em 4.675em -0.543em); top: -4.973em; left: 50%; margin-left: -1.575em;"><span class="msubsup" id="MathJax-Span-127"><span style="display: inline-block; position: relative; width: 3.158em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.543em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-128" style="font-family: MathJax_Math; font-style: italic;">w</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.43em -0.482em); top: -2.606em; left: 0.731em;"><span class="texatom" id="MathJax-Span-129"><span class="mrow" id="MathJax-Span-130"><span class="mo" id="MathJax-Span-131" style="font-size: 70.7%; font-family: MathJax_Main;">−</span><span class="mn" id="MathJax-Span-132" style="font-size: 70.7%; font-family: MathJax_Main;">1</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.552em -0.543em); top: -1.939em; left: 0.731em;"><span class="texatom" id="MathJax-Span-133"><span class="mrow" id="MathJax-Span-134"><span class="mi" id="MathJax-Span-135" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">x</span><span class="mi" id="MathJax-Span-136" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">g<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-137" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">b</span><span class="mi" id="MathJax-Span-138" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-139" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-140" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-141" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">t</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span><span style="display: inline-block; width: 0px; height: 4.008em;"></span></span><span style="position: absolute; clip: rect(1.702em 1000em 3.34em -0.543em); top: -1.878em; left: 50%; margin-left: -7.461em;"><span class="mrow" id="MathJax-Span-142"><span class="mi" id="MathJax-Span-143" style="font-family: MathJax_Math; font-style: italic;">m</span><span class="mi" id="MathJax-Span-144" style="font-family: MathJax_Math; font-style: italic;">s</span><span class="msubsup" id="MathJax-Span-145"><span style="display: inline-block; position: relative; width: 2.916em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.482em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-146" style="font-family: MathJax_Math; font-style: italic;">e</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.43em -0.482em); top: -2.606em; left: 0.488em;"><span class="texatom" id="MathJax-Span-147"><span class="mrow" id="MathJax-Span-148"><span class="mo" id="MathJax-Span-149" style="font-size: 70.7%; font-family: MathJax_Main;">−</span><span class="mn" id="MathJax-Span-150" style="font-size: 70.7%; font-family: MathJax_Main;">1</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.552em -0.543em); top: -1.939em; left: 0.488em;"><span class="texatom" id="MathJax-Span-151"><span class="mrow" id="MathJax-Span-152"><span class="mi" id="MathJax-Span-153" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">x</span><span class="mi" id="MathJax-Span-154" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">g<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-155" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">b</span><span class="mi" id="MathJax-Span-156" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-157" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-158" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-159" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">t</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span><span class="mo" id="MathJax-Span-160" style="font-family: MathJax_Main; padding-left: 0.246em;">+</span><span class="mi" id="MathJax-Span-161" style="font-family: MathJax_Math; font-style: italic; padding-left: 0.246em;">m</span><span class="mi" id="MathJax-Span-162" style="font-family: MathJax_Math; font-style: italic;">s</span><span class="msubsup" id="MathJax-Span-163"><span style="display: inline-block; position: relative; width: 2.552em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.482em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-164" style="font-family: MathJax_Math; font-style: italic;">e</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.43em -0.482em); top: -2.606em; left: 0.488em;"><span class="texatom" id="MathJax-Span-165"><span class="mrow" id="MathJax-Span-166"><span class="mo" id="MathJax-Span-167" style="font-size: 70.7%; font-family: MathJax_Main;">−</span><span class="mn" id="MathJax-Span-168" style="font-size: 70.7%; font-family: MathJax_Main;">1</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.552em -0.482em); top: -1.878em; left: 0.488em;"><span class="texatom" id="MathJax-Span-169"><span class="mrow" id="MathJax-Span-170"><span class="mi" id="MathJax-Span-171" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">f<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.064em;"></span></span><span class="mi" id="MathJax-Span-172" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-173" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">r</span><span class="mi" id="MathJax-Span-174" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">e</span><span class="mi" id="MathJax-Span-175" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-176" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">t</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span><span class="mo" id="MathJax-Span-177" style="font-family: MathJax_Main; padding-left: 0.246em;">+</span><span class="mi" id="MathJax-Span-178" style="font-family: MathJax_Math; font-style: italic; padding-left: 0.246em;">m</span><span class="mi" id="MathJax-Span-179" style="font-family: MathJax_Math; font-style: italic;">s</span><span class="msubsup" id="MathJax-Span-180"><span style="display: inline-block; position: relative; width: 2.855em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.482em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-181" style="font-family: MathJax_Math; font-style: italic;">e</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.43em -0.482em); top: -2.606em; left: 0.488em;"><span class="texatom" id="MathJax-Span-182"><span class="mrow" id="MathJax-Span-183"><span class="mo" id="MathJax-Span-184" style="font-size: 70.7%; font-family: MathJax_Main;">−</span><span class="mn" id="MathJax-Span-185" style="font-size: 70.7%; font-family: MathJax_Main;">1</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.43em -0.482em); top: -1.939em; left: 0.488em;"><span class="texatom" id="MathJax-Span-186"><span class="mrow" id="MathJax-Span-187"><span class="mi" id="MathJax-Span-188" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-189" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">a</span><span class="mi" id="MathJax-Span-190" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">r</span><span class="mi" id="MathJax-Span-191" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">i</span><span class="mi" id="MathJax-Span-192" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">m</span><span class="mi" id="MathJax-Span-193" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">a</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 2.673em;"></span></span><span style="position: absolute; clip: rect(0.853em 1000em 1.277em -0.543em); top: -1.332em; left: 0.003em;"><span style="border-left-width: 15.052em; border-left-style: solid; display: inline-block; overflow: hidden; width: 0px; height: 1.25px; vertical-align: 0.003em;"></span><span style="display: inline-block; width: 0px; height: 1.095em;"></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 2.673em;"></span></span></span><span style="border-left-width: 0.003em; border-left-style: solid; display: inline-block; overflow: hidden; width: 0px; height: 3.316em; vertical-align: -1.372em;"></span></span></nobr></span></div><script type="math/tex; mode=display" id="MathJax-Element-4">w_{xgboost} = \frac{w_{xgboost}^{-1}}{mse_{xgboost}^{-1} + mse_{forest}^{-1} + mse_{sarima}^{-1}}</script> <span class="MathJax_Preview"></span><div class="MathJax_Display" role="textbox" aria-readonly="true" style="text-align: center;"><span class="MathJax" id="MathJax-Element-5-Frame"><nobr><span class="math" id="MathJax-Span-194" style="width: 20.088em; display: inline-block;"><span style="display: inline-block; position: relative; width: 19.481em; height: 0px; font-size: 103%;"><span style="position: absolute; clip: rect(0.731em 1000em 4.129em -0.543em); top: -2.667em; left: 0.003em;"><span class="mrow" id="MathJax-Span-195"><span class="msubsup" id="MathJax-Span-196"><span style="display: inline-block; position: relative; width: 2.794em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.543em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-197" style="font-family: MathJax_Math; font-style: italic;">w</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; top: -2.06em; left: 0.731em;"><span class="texatom" id="MathJax-Span-198"><span class="mrow" id="MathJax-Span-199"><span class="mi" id="MathJax-Span-200" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">f<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.064em;"></span></span><span class="mi" id="MathJax-Span-201" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-202" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">r</span><span class="mi" id="MathJax-Span-203" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">e</span><span class="mi" id="MathJax-Span-204" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-205" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">t</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span><span class="mo" id="MathJax-Span-206" style="font-family: MathJax_Main; padding-left: 0.306em;">=</span><span class="mfrac" id="MathJax-Span-207" style="padding-left: 0.428em; padding-right: 0.124em;"><span style="display: inline-block; position: relative; width: 15.052em; height: 0px;"><span style="position: absolute; clip: rect(3.037em 1000em 4.675em -0.543em); top: -4.973em; left: 50%; margin-left: -1.393em;"><span class="msubsup" id="MathJax-Span-208"><span style="display: inline-block; position: relative; width: 2.794em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.543em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-209" style="font-family: MathJax_Math; font-style: italic;">w</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.43em -0.482em); top: -2.606em; left: 0.731em;"><span class="texatom" id="MathJax-Span-210"><span class="mrow" id="MathJax-Span-211"><span class="mo" id="MathJax-Span-212" style="font-size: 70.7%; font-family: MathJax_Main;">−</span><span class="mn" id="MathJax-Span-213" style="font-size: 70.7%; font-family: MathJax_Main;">1</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.552em -0.482em); top: -1.878em; left: 0.731em;"><span class="texatom" id="MathJax-Span-214"><span class="mrow" id="MathJax-Span-215"><span class="mi" id="MathJax-Span-216" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">f<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.064em;"></span></span><span class="mi" id="MathJax-Span-217" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-218" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">r</span><span class="mi" id="MathJax-Span-219" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">e</span><span class="mi" id="MathJax-Span-220" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-221" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">t</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span><span style="display: inline-block; width: 0px; height: 4.008em;"></span></span><span style="position: absolute; clip: rect(1.702em 1000em 3.34em -0.543em); top: -1.878em; left: 50%; margin-left: -7.461em;"><span class="mrow" id="MathJax-Span-222"><span class="mi" id="MathJax-Span-223" style="font-family: MathJax_Math; font-style: italic;">m</span><span class="mi" id="MathJax-Span-224" style="font-family: MathJax_Math; font-style: italic;">s</span><span class="msubsup" id="MathJax-Span-225"><span style="display: inline-block; position: relative; width: 2.916em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.482em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-226" style="font-family: MathJax_Math; font-style: italic;">e</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.43em -0.482em); top: -2.606em; left: 0.488em;"><span class="texatom" id="MathJax-Span-227"><span class="mrow" id="MathJax-Span-228"><span class="mo" id="MathJax-Span-229" style="font-size: 70.7%; font-family: MathJax_Main;">−</span><span class="mn" id="MathJax-Span-230" style="font-size: 70.7%; font-family: MathJax_Main;">1</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.552em -0.543em); top: -1.939em; left: 0.488em;"><span class="texatom" id="MathJax-Span-231"><span class="mrow" id="MathJax-Span-232"><span class="mi" id="MathJax-Span-233" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">x</span><span class="mi" id="MathJax-Span-234" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">g<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-235" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">b</span><span class="mi" id="MathJax-Span-236" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-237" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-238" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-239" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">t</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span><span class="mo" id="MathJax-Span-240" style="font-family: MathJax_Main; padding-left: 0.246em;">+</span><span class="mi" id="MathJax-Span-241" style="font-family: MathJax_Math; font-style: italic; padding-left: 0.246em;">m</span><span class="mi" id="MathJax-Span-242" style="font-family: MathJax_Math; font-style: italic;">s</span><span class="msubsup" id="MathJax-Span-243"><span style="display: inline-block; position: relative; width: 2.552em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.482em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-244" style="font-family: MathJax_Math; font-style: italic;">e</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.43em -0.482em); top: -2.606em; left: 0.488em;"><span class="texatom" id="MathJax-Span-245"><span class="mrow" id="MathJax-Span-246"><span class="mo" id="MathJax-Span-247" style="font-size: 70.7%; font-family: MathJax_Main;">−</span><span class="mn" id="MathJax-Span-248" style="font-size: 70.7%; font-family: MathJax_Main;">1</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.552em -0.482em); top: -1.878em; left: 0.488em;"><span class="texatom" id="MathJax-Span-249"><span class="mrow" id="MathJax-Span-250"><span class="mi" id="MathJax-Span-251" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">f<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.064em;"></span></span><span class="mi" id="MathJax-Span-252" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-253" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">r</span><span class="mi" id="MathJax-Span-254" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">e</span><span class="mi" id="MathJax-Span-255" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-256" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">t</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span><span class="mo" id="MathJax-Span-257" style="font-family: MathJax_Main; padding-left: 0.246em;">+</span><span class="mi" id="MathJax-Span-258" style="font-family: MathJax_Math; font-style: italic; padding-left: 0.246em;">m</span><span class="mi" id="MathJax-Span-259" style="font-family: MathJax_Math; font-style: italic;">s</span><span class="msubsup" id="MathJax-Span-260"><span style="display: inline-block; position: relative; width: 2.855em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.482em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-261" style="font-family: MathJax_Math; font-style: italic;">e</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.43em -0.482em); top: -2.606em; left: 0.488em;"><span class="texatom" id="MathJax-Span-262"><span class="mrow" id="MathJax-Span-263"><span class="mo" id="MathJax-Span-264" style="font-size: 70.7%; font-family: MathJax_Main;">−</span><span class="mn" id="MathJax-Span-265" style="font-size: 70.7%; font-family: MathJax_Main;">1</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.43em -0.482em); top: -1.939em; left: 0.488em;"><span class="texatom" id="MathJax-Span-266"><span class="mrow" id="MathJax-Span-267"><span class="mi" id="MathJax-Span-268" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-269" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">a</span><span class="mi" id="MathJax-Span-270" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">r</span><span class="mi" id="MathJax-Span-271" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">i</span><span class="mi" id="MathJax-Span-272" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">m</span><span class="mi" id="MathJax-Span-273" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">a</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 2.673em;"></span></span><span style="position: absolute; clip: rect(0.853em 1000em 1.277em -0.543em); top: -1.332em; left: 0.003em;"><span style="border-left-width: 15.052em; border-left-style: solid; display: inline-block; overflow: hidden; width: 0px; height: 1.25px; vertical-align: 0.003em;"></span><span style="display: inline-block; width: 0px; height: 1.095em;"></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 2.673em;"></span></span></span><span style="border-left-width: 0.003em; border-left-style: solid; display: inline-block; overflow: hidden; width: 0px; height: 3.316em; vertical-align: -1.372em;"></span></span></nobr></span></div><script type="math/tex; mode=display" id="MathJax-Element-5">w_{forest} = \frac{w_{forest}^{-1}}{mse_{xgboost}^{-1} + mse_{forest}^{-1} + mse_{sarima}^{-1}}</script> <span class="MathJax_Preview"></span><div class="MathJax_Display" role="textbox" aria-readonly="true" style="text-align: center;"><span class="MathJax" id="MathJax-Element-6-Frame"><nobr><span class="math" id="MathJax-Span-274" style="width: 20.391em; display: inline-block;"><span style="display: inline-block; position: relative; width: 19.785em; height: 0px; font-size: 103%;"><span style="position: absolute; clip: rect(0.853em 1000em 4.129em -0.543em); top: -2.667em; left: 0.003em;"><span class="mrow" id="MathJax-Span-275"><span class="msubsup" id="MathJax-Span-276"><span style="display: inline-block; position: relative; width: 3.098em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.543em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-277" style="font-family: MathJax_Math; font-style: italic;">w</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; top: -2.121em; left: 0.731em;"><span class="texatom" id="MathJax-Span-278"><span class="mrow" id="MathJax-Span-279"><span class="mi" id="MathJax-Span-280" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-281" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">a</span><span class="mi" id="MathJax-Span-282" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">r</span><span class="mi" id="MathJax-Span-283" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">i</span><span class="mi" id="MathJax-Span-284" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">m</span><span class="mi" id="MathJax-Span-285" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">a</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span><span class="mo" id="MathJax-Span-286" style="font-family: MathJax_Main; padding-left: 0.306em;">=</span><span class="mfrac" id="MathJax-Span-287" style="padding-left: 0.428em; padding-right: 0.124em;"><span style="display: inline-block; position: relative; width: 15.052em; height: 0px;"><span style="position: absolute; clip: rect(3.037em 1000em 4.493em -0.543em); top: -4.791em; left: 50%; margin-left: -1.575em;"><span class="msubsup" id="MathJax-Span-288"><span style="display: inline-block; position: relative; width: 3.098em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.543em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-289" style="font-family: MathJax_Math; font-style: italic;">w</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.43em -0.482em); top: -2.606em; left: 0.731em;"><span class="texatom" id="MathJax-Span-290"><span class="mrow" id="MathJax-Span-291"><span class="mo" id="MathJax-Span-292" style="font-size: 70.7%; font-family: MathJax_Main;">−</span><span class="mn" id="MathJax-Span-293" style="font-size: 70.7%; font-family: MathJax_Main;">1</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.43em -0.482em); top: -1.939em; left: 0.731em;"><span class="texatom" id="MathJax-Span-294"><span class="mrow" id="MathJax-Span-295"><span class="mi" id="MathJax-Span-296" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-297" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">a</span><span class="mi" id="MathJax-Span-298" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">r</span><span class="mi" id="MathJax-Span-299" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">i</span><span class="mi" id="MathJax-Span-300" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">m</span><span class="mi" id="MathJax-Span-301" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">a</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span><span style="display: inline-block; width: 0px; height: 4.008em;"></span></span><span style="position: absolute; clip: rect(1.702em 1000em 3.34em -0.543em); top: -1.878em; left: 50%; margin-left: -7.461em;"><span class="mrow" id="MathJax-Span-302"><span class="mi" id="MathJax-Span-303" style="font-family: MathJax_Math; font-style: italic;">m</span><span class="mi" id="MathJax-Span-304" style="font-family: MathJax_Math; font-style: italic;">s</span><span class="msubsup" id="MathJax-Span-305"><span style="display: inline-block; position: relative; width: 2.916em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.482em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-306" style="font-family: MathJax_Math; font-style: italic;">e</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.43em -0.482em); top: -2.606em; left: 0.488em;"><span class="texatom" id="MathJax-Span-307"><span class="mrow" id="MathJax-Span-308"><span class="mo" id="MathJax-Span-309" style="font-size: 70.7%; font-family: MathJax_Main;">−</span><span class="mn" id="MathJax-Span-310" style="font-size: 70.7%; font-family: MathJax_Main;">1</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.552em -0.543em); top: -1.939em; left: 0.488em;"><span class="texatom" id="MathJax-Span-311"><span class="mrow" id="MathJax-Span-312"><span class="mi" id="MathJax-Span-313" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">x</span><span class="mi" id="MathJax-Span-314" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">g<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.003em;"></span></span><span class="mi" id="MathJax-Span-315" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">b</span><span class="mi" id="MathJax-Span-316" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-317" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-318" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-319" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">t</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span><span class="mo" id="MathJax-Span-320" style="font-family: MathJax_Main; padding-left: 0.246em;">+</span><span class="mi" id="MathJax-Span-321" style="font-family: MathJax_Math; font-style: italic; padding-left: 0.246em;">m</span><span class="mi" id="MathJax-Span-322" style="font-family: MathJax_Math; font-style: italic;">s</span><span class="msubsup" id="MathJax-Span-323"><span style="display: inline-block; position: relative; width: 2.552em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.482em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-324" style="font-family: MathJax_Math; font-style: italic;">e</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.43em -0.482em); top: -2.606em; left: 0.488em;"><span class="texatom" id="MathJax-Span-325"><span class="mrow" id="MathJax-Span-326"><span class="mo" id="MathJax-Span-327" style="font-size: 70.7%; font-family: MathJax_Main;">−</span><span class="mn" id="MathJax-Span-328" style="font-size: 70.7%; font-family: MathJax_Main;">1</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.552em -0.482em); top: -1.878em; left: 0.488em;"><span class="texatom" id="MathJax-Span-329"><span class="mrow" id="MathJax-Span-330"><span class="mi" id="MathJax-Span-331" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">f<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.064em;"></span></span><span class="mi" id="MathJax-Span-332" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">o</span><span class="mi" id="MathJax-Span-333" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">r</span><span class="mi" id="MathJax-Span-334" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">e</span><span class="mi" id="MathJax-Span-335" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-336" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">t</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span><span class="mo" id="MathJax-Span-337" style="font-family: MathJax_Main; padding-left: 0.246em;">+</span><span class="mi" id="MathJax-Span-338" style="font-family: MathJax_Math; font-style: italic; padding-left: 0.246em;">m</span><span class="mi" id="MathJax-Span-339" style="font-family: MathJax_Math; font-style: italic;">s</span><span class="msubsup" id="MathJax-Span-340"><span style="display: inline-block; position: relative; width: 2.855em; height: 0px;"><span style="position: absolute; clip: rect(1.884em 1000em 2.673em -0.482em); top: -2.485em; left: 0.003em;"><span class="mi" id="MathJax-Span-341" style="font-family: MathJax_Math; font-style: italic;">e</span><span style="display: inline-block; width: 0px; height: 2.491em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.43em -0.482em); top: -2.606em; left: 0.488em;"><span class="texatom" id="MathJax-Span-342"><span class="mrow" id="MathJax-Span-343"><span class="mo" id="MathJax-Span-344" style="font-size: 70.7%; font-family: MathJax_Main;">−</span><span class="mn" id="MathJax-Span-345" style="font-size: 70.7%; font-family: MathJax_Main;">1</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span><span style="position: absolute; clip: rect(1.581em 1000em 2.43em -0.482em); top: -1.939em; left: 0.488em;"><span class="texatom" id="MathJax-Span-346"><span class="mrow" id="MathJax-Span-347"><span class="mi" id="MathJax-Span-348" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">s</span><span class="mi" id="MathJax-Span-349" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">a</span><span class="mi" id="MathJax-Span-350" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">r</span><span class="mi" id="MathJax-Span-351" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">i</span><span class="mi" id="MathJax-Span-352" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">m</span><span class="mi" id="MathJax-Span-353" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">a</span></span></span><span style="display: inline-block; width: 0px; height: 2.248em;"></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 2.673em;"></span></span><span style="position: absolute; clip: rect(0.853em 1000em 1.277em -0.543em); top: -1.332em; left: 0.003em;"><span style="border-left-width: 15.052em; border-left-style: solid; display: inline-block; overflow: hidden; width: 0px; height: 1.25px; vertical-align: 0.003em;"></span><span style="display: inline-block; width: 0px; height: 1.095em;"></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 2.673em;"></span></span></span><span style="border-left-width: 0.003em; border-left-style: solid; display: inline-block; overflow: hidden; width: 0px; height: 3.128em; vertical-align: -1.372em;"></span></span></nobr></span></div><script type="math/tex; mode=display" id="MathJax-Element-6">w_{sarima} = \frac{w_{sarima}^{-1}}{mse_{xgboost}^{-1} + mse_{forest}^{-1} + mse_{sarima}^{-1}}</script></p>
+
+</article></slide><slide class="" data-slide-num="33" data-total-slides="34"><hgroup><h2>Results and Esemble (4/5)</h2></hgroup><article id="results-and-esemble-45">
+
+<ul>
+<li>Weighting done without using the prediction for the outlier subareas</li>
+<li>Performances of the models:</li>
+<li><strong>MSE</strong>, <strong>MAPE</strong>, <strong>MAXAPE</strong> being computed on a 10-days length test set</li>
+<li><em>Out of bag</em>, <em>Logloss</em> being computed by the Random forest training and the Xgboost cross-validation, respectively</li>
+<li>We also considered the subareas for which we manually predicted 0 sales</li>
+</ul>
+
+</article></slide><slide class="" data-slide-num="34" data-total-slides="34"><hgroup><h2>Results and Esemble (5/5)</h2></hgroup><article id="results-and-esemble-55">
+
+<table class="rmdtable">
+<colgroup><col width="12%">
+<col width="12%">
+<col width="12%">
+<col width="12%">
+<col width="12%">
+</colgroup><tbody><tr class="header">
+<th align="center"><strong>MODEL</strong></th>
+<th align="center"><strong>MSE</strong></th>
+<th align="center"><strong>MAPE</strong></th>
+<th align="center"><strong>MAXAPE</strong></th>
+<th align="center"><strong>OTHER</strong></th>
+</tr>
+<tr class="odd">
+<td align="center"><strong>Sarima</strong></td>
+<td align="center">2.146717</td>
+<td align="center">0.2788613</td>
+<td align="center">3.472367</td>
+<td align="center">-</td>
+</tr>
+<tr class="even">
+<td align="center"><strong>Random Forest</strong></td>
+<td align="center">2.179245</td>
+<td align="center">0.2865883</td>
+<td align="center">4.188574</td>
+<td align="center"><em>Out of bag:</em> 1.771598</td>
+</tr>
+<tr class="odd">
+<td align="center"><strong>XGBoost</strong></td>
+<td align="center">1.992626</td>
+<td align="center">0.2705864</td>
+<td align="center">3.95667</td>
+<td align="center"><em>Logloss:</em> -29.58445</td>
+</tr>
+<tr class="even">
+<td align="center"><strong>Ensemble</strong></td>
+<td align="center">1.902922</td>
+<td align="center">0.2614705</td>
+<td align="center">3.822493</td>
+<td align="center">-</td>
+</tr>
+</tbody></table></article></slide>
+
+
+  <slide class="backdrop"></slide>
+
+<div class="slide-area" id="prev-slide-area"></div><div class="slide-area" id="next-slide-area"></div></slides>
+
+<script src="./presentazione_files/modernizr.custom.45394.js"></script>
+<script src="./presentazione_files/prettify.js"></script>
+<script src="./presentazione_files/lang-r.js"></script>
+<script src="./presentazione_files/lang-yaml.js"></script>
+<script src="./presentazione_files/hammer.js"></script>
+<script src="./presentazione_files/slide-controller.js"></script>
+<script src="./presentazione_files/slide-deck.js"></script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "file159c4aab3c10_files/mathjax-local/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+<!-- map slide visiblity events into shiny -->
+<script>
+  (function() {
+    if (window.jQuery) {
+       window.jQuery(document).on('slideleave', function(e) {
+         window.jQuery(e.target).trigger('hidden');
+      });
+       window.jQuery(document).on('slideenter', function(e) {
+         window.jQuery(e.target).trigger('shown');
+      });
+    }
+  })();
+</script>
+
+
+</div>
+  </div>
+
+
+
+<div id="MathJax_Font_Test" style="position: absolute; visibility: hidden; top: 0px; left: 0px; width: auto; padding: 0px; border: 0px; margin: 0px; white-space: nowrap; text-align: left; text-indent: 0px; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; font-size: 40px; font-weight: normal; font-style: normal; font-family: MathJax_Main, sans-serif;"></div></body></html>

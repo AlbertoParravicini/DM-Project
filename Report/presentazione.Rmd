@@ -1,0 +1,491 @@
+---
+title: "Data Mining Project: BIP"
+author: "Alberto Parravicini, Simone Ripamonti, Luca Stornaiuolo"
+# output: ioslides_presentation
+# output: slidy_presentation
+# output: beamer_presentation
+runtime: shiny
+output: ioslides_presentation
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(xts)
+library(ggplot2)
+library(dplyr)
+library(tseries)
+library(PerformanceAnalytics)
+library(forecast)
+library(astsa)
+library(Metrics)
+library(xgboost)
+library(ranger)
+library(ggthemes) # visualization
+library(normwhn.test)
+library(nortest)
+library(GMD)
+library(rworldmap)
+library(nortestARMA)
+```
+
+## Data exploration
+
++ Initial exploratory analysis:
+    + Cumulative *distribution of sales*
+    + Distribution of sales by product and zone
++ Understanding the dataset:
+    + No explicit missing values in the dataset (i.e. NA or similar values), but...
+    + Missing subarea **51**
++ **Outliers**:
+    + Extremely high sales at *2014-06-30*
+    + No sales from *2014-03-19* to *2014-03-25*
+      
+<!-- 
+areas are mapped to an arbitrary number of subareas (and each subarea is mapped to exactly one area), there is no reason to believe that the missing subarea should negatively affect other predictions
+
+these events seems to be purely random and not correlated to any subsequent behaviour of the sales. We decided to replace these values with a prediction 
+-->
+
+
+
+## Initial exploratory analysis (1/3)
+
+<!--
+  What to say:
+    Key of the dataset is <Product, Subarea, Date>
+    We visualized sales across the days of the week and across months
+    We visualized also how sales varied depending on the various greographical areas
+-->
+
+```{r echo=F, tidy = T, comment = "#", collapse=F, warning=F, fig.align="center"}
+
+dataset <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
+dataset <- dataset[ , !(names(dataset) %in% c("X"))]
+
+# Convert dates to class "Data"
+dataset$data <- as.Date(dataset$data)
+# Convert "vendite" to numeric values if needed
+if (class(dataset$vendite) == "factor") {
+  dataset$vendite <- as.numeric(levels(dataset$vendite))[dataset$vendite]
+}
+
+# Turn some features to factors
+factorVars <- c('zona','area', "sottoarea",
+                'prod','giorno_mese', "giorno_settimana", "giorno_anno", "mese", "settimana_anno", "anno", "weekend","stagione", "key")
+
+dataset[factorVars] <- lapply(dataset[factorVars], function(x) as.factor(x))
+
+```
+```{r echo=F, tidy = T, comment = "#", collapse=F, warning=F, fig.align="center"}
+
+p0 <- ggplot(dataset, aes(giorno_settimana, vendite)) + geom_boxplot(outlier.shape = NA, color = "#004d80", fill = "#008ae6", alpha = 0.7) + scale_y_continuous(limits = c(0, 15)) + 
+  ggtitle("Sales for each day of the week, divided by product") + theme_bw() + facet_grid(. ~ prod)
+print(p0)
+```
+
+## Initial exploratory analysis (2/3)
+
+```{r echo=F, tidy = T, comment = "#", collapse=F, warning=F, fig.align="center"}
+p0 <- ggplot(dataset, aes(mese, vendite)) + geom_boxplot(outlier.shape = NA, color = "#004d80", fill = "#008ae6", alpha = 0.7) + scale_y_continuous(limits = c(0, 15)) + 
+  ggtitle("Sales for each month") + theme_minimal()
+print(p0)
+```
+
+## Initial exploratory analysis (3/3)
+
+```{r echo=F, tidy = T, comment = "#", collapse=F, warning=F, fig.align="center"}
+zona_dataset <- dataset %>%
+  group_by(zona, prod) %>%
+  summarise(vendite = mean(vendite))
+Mese_dataset <- dataset %>%
+  group_by(mese, prod) %>%
+  summarise(vendite = mean(vendite))
+ggplot(zona_dataset, aes(x = zona, y = vendite, fill = prod)) +
+  geom_bar(stat = 'identity', position = 'stack', colour = 'black', alpha = 0.6) +
+  labs(y = 'Average sales', 
+       x = 'Zone',
+       title = 'Sales for each zone and product - Bars are stacked') +
+  theme(axis.text=element_text(size = 5, color = "black")) +
+  scale_x_discrete(limits = Mese_dataset$zona) + 
+  scale_y_continuous(breaks=seq(0, 10, 1)) + theme_minimal() 
+
+```
+
+
+## Outlier identification, missing values
++ Unusual sales behaviour:
+    + Almost no sales in subarea **20**, subareas **32** and **78** (relatively to product 2).
+    + Do these time series have a predictable internal structure?
+    **Box-Pierce** test of independence: 
+    + *Null hypothesis*: the signal is made of independent observations.
+    
+    
+    `data:  subarea_20_p1$Vendite`  
+    `X-squared = 0.057371, df = 1, p-value = 0.8107`
+
+    + Using GPS we noted that these locations are unrelated
+    + Not useful in training, removed from the dataset
+    + Predicted sales equal to 0 a-posteriori
+    
+<!--
+decided to inspect the time-series of subareas and of the other subareas, to understand if they displayed a predictable internal structure or if they resembled white noise
+
+The *Box-Pierce* test statistic examines if a univariate time-series is composed of independent observations: this is the case of white noise or of constant signals, whose best predictor is the mean of the signal itself.    
+
+a low p-value implies that this isn't the case, and the signal has a more complex internal structure. 
+-->
+
+
+
+
+
+---
+runtime: shiny
+output: html_document
+---
+## Analyze the time-series!
+
+```{r echo = FALSE}
+dataset_polimi <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
+
+```
+```{r echo=F, tidy = T, comment = "#", collapse=T}
+selectInput("prodotto", label = "Select a product:",
+              choices = c(1, 2), selected = 1)
+
+sliderInput("sottoarea", label = "Select a subarea:",
+              min = 1, max = length(unique(dataset_polimi$sottoarea)), value = 20, step = 1)
+```
+
+```{r echo = FALSE, fig.align="center"}
+renderPlot({
+  selected <- filter(dataset_polimi, sottoarea == input$sottoarea, prod == input$prodotto)
+
+  tsdisplay(selected$vendite)
+})
+```
+
+
+
+    
+## Data preaparation
+  + Basic feature engineering:
+    + Day of the week, month, year
+    + Month, week of the year, year
+    + Weekend
+    + Holiday
+    + First of the month
+  + Other feature engineering: cumulative sales, etc...
+  + Coordinates clustering
+
+## Other feature engineering (1/4)
+  + Features to keep track of cumulative sales over certain periods:
+    + Cumulative sums by product and subarea, over each week, month and year
+    + Aggregate sales of the entire company, day by day, by product and cumulative
+    
+  + Not possible to compute directly these values for dates above the one in the dataset
+  + Sarima models to predict each of these time-series
+  
+<!-- 
+The idea is that using a Sarima model built specifically for a certain time-series (e.g. the aggregate sales) can lead to a highly accurate prediction that can be beneficial to the other models. The cumulative sales didn't prove to be very useful, but the predicion of the aggregate sales improved sightly our results.
+
+Note that to perform predictions over test and validation sets we also used the predictions of these timeseries, instead of the real values that we had at our disposal (used for the training, obviously): if we used the latter, the results would be faked, as we'd be employing information unavailable in a real prediction.
+-->
+
+## Other feature engineering (2/4)
+  + Replaced outliers and missing values identified with a prediction using a Random Forest model
+      + Sarima model wouldn't be as effective since these values are located in the middle of the dataset
+      + Replaced values are the ones at *"2014-01-01"*, *"2014-6-30"*, and from *"2014-03-19"* to *"2014-03-25"*
+    
+<!-- 
+(in the 2 following years, sales at *"01-01"* are usually rather low, but never completely 0 as in 2014)
+-->
+
+## Other feature engineering (3/4)
+  + Coordinates clustering
+      + Division by zones/areas partially consistent with what expected
+      + But not as smooth as one might desire
+      + We choose to build a higher level hierarchy
+```{r echo=F, warning=F,fig.align="center"}
+  dataset_polimi <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
+    map <- getMap(resolution = "low")
+    plot(map, xlim = c(5, 20), ylim = c(36, 47), asp = 1)
+    for (i in unique(dataset_polimi$zona)){
+      for (s in unique(filter(dataset_polimi, zona==i)$sottoarea)){
+            temp <- filter(dataset_polimi, sottoarea==s)
+            points(temp$longitudine[1], temp$latitudine[1], col=i, asp=1)
+      }
+    }
+```
+
+## Other feature engineering (4/4)
+  + We performed a Knee-Elbow analysis
+  + Chosen three different clustering for subareas:
+      + 3 cluster grouping: North, Center and South Italy
+      + 6 cluster grouping: value suggested by the Knee-Elbow analysis
+      + 20 cluster grouping: to distinguish the different Italian regions
+
+---
+runtime: shiny
+output: html_document
+---
+
+## Analyze the clusters!
+
+```{r echo = FALSE}
+dataset_polimi <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
+
+```
+```{r echo=F, warning=F, tidy = T, comment = "#", collapse=T, fig.align="center"}
+   selectInput("cluster", label = "Select a number of clusters:",
+               choices = c("3 clusters", "6 clusters", "20 clusters"), selected = "6 clusters")
+
+renderPlot({
+    if (input$cluster == "3 clusters")
+      c = 23
+    else if (input$cluster == "6 clusters")
+      c = 24
+    else
+      c = 25
+    
+    map <- getMap(resolution = "low")
+    plot(map, xlim = c(5, 20), ylim = c(36, 47), asp = 1)
+    print(input$cluster)
+    for (i in unique(dataset_polimi[, c])) {
+      if (c == 23) {
+        for (s in unique(filter(dataset_polimi, cluster3==i)$sottoarea)){
+              temp <- filter(dataset_polimi, sottoarea==s)
+              points(temp$longitudine[1], temp$latitudine[1], col=i, asp=1)
+        }
+      }
+      else if (c == 24) {
+        for (s in unique(filter(dataset_polimi, cluster6==i)$sottoarea)){
+              temp <- filter(dataset_polimi, sottoarea==s)
+              points(temp$longitudine[1], temp$latitudine[1], col=i, asp=1)
+        }
+      }
+      else {
+        for (s in unique(filter(dataset_polimi, cluster20==i)$sottoarea)){
+              temp <- filter(dataset_polimi, sottoarea==s)
+              points(temp$longitudine[1], temp$latitudine[1], col=i, asp=1)
+        }
+      }
+    }
+})
+    
+```
+
+## Model Building
++ Seasonal ARIMA
++ Random Forest
++ XGBoost
++ Results and Ensemble
+
+## Seasonal ARIMA (1/4)
++ Seasonal Auto-Regressive Integrated Moving Average
++ Capable of fitting structure in complex time series
+    + Even those with seasonalities or trends
++ One different model for each subarea and product
+    + Assumption that all time-series could be fitted with a model of the same order
+    + Few exceptions where Random Forest and XGBoost outperformed Sarima
++ **Auto-correlation**, **Partial auto-correlation**, to understand the  **MA** and **AR**
++ **Neyman Smooth Tests of Normality** to check if the residuals of the training can be considered **white noise**
+
+## Seasonal ARIMA (2/4)
+```{r echo=F, tidy = T, comment = "#", collapse=T, fig.align="center"}
+
+dataset <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE, row.names=NULL)
+dataset <- dataset[ , !(names(dataset) %in% c("X"))]
+if (class(dataset$vendite) == "factor") {
+  dataset$vendite <- as.numeric(levels(dataset$vendite))[dataset$vendite]
+}
+dataset$data <- as.Date(dataset$data)
+factorVars <- c('zona','area', "sottoarea",
+                'prod','giorno_mese', "giorno_settimana", "giorno_anno", "vendite_missing", "mese", "settimana_anno", "anno", "weekend","stagione", "key", "primo_del_mese", "cluster3", "cluster6", "cluster20", "vacanza")
+dataset[factorVars] <- lapply(dataset[factorVars], function(x) as.factor(x))
+
+prediction_length <- 30
+train <- filter(dataset, data <= max(data) - prediction_length)
+test <- filter(dataset, data > max(data) - prediction_length)
+train$data <- as.Date(as.character(train$data),format="%Y-%m-%d")
+test$data <- as.Date(as.character(test$data),format="%Y-%m-%d")
+filtered_data <- filter(dataset, prod == 1, sottoarea == 1)
+train_length <- length(unique(train$data))
+ts_full <- zoo(filtered_data$vendite, order.by = filtered_data$data)
+
+tsdisplay(ts_full)
+```
+
+
+## Seasonal ARIMA (3/4)
+```{r echo=F, tidy = T, comment = "#", collapse=T, fig.align="center"}
+ts_train <- ts_full[1:train_length]
+ts_test <- ts_full[(train_length+1):(prediction_length+train_length)]
+
+fit <- Arima(ts_train, c(1, 1, 1), seasonal = list(order = c(1, 1, 1), period = 7), include.mean = T, method = "CSS")
+pred <- forecast(fit, prediction_length)
+
+train_table <- data.frame(vendite=coredata(ts_train)[(length(ts_train)-prediction_length):length(ts_train)], data=index(ts_train[(length(ts_train)-prediction_length):length(ts_train)]), type = "train")
+    test_table <- data.frame(vendite=coredata(ts_test), data=seq.Date(from=max(train$data)+1, length.out = prediction_length, by = 1), type = "test")
+    pred_table <- data.frame(vendite=pred$mean, data=seq.Date(from=max(train$data)+1, length.out = prediction_length, by = 1), type = "pred")
+
+table_tot <- rbind(train_table, test_table, pred_table)
+
+p <- ggplot(table_tot, aes(x=data, y=vendite, color = type)) +
+      coord_cartesian(xlim = c(end(ts_train)-prediction_length, end(ts_train)+prediction_length))
+p <- p + geom_line(size = 1, alpha = 0.8) + geom_point(size = 2) + scale_colour_colorblind()
+p <- p + theme_minimal() +xlab("Data") + ylab("Numero di vendite") + ggtitle("Prediction of product 1, subarea 1, over 50 days")
+print(p)
+```
+
+## Seasonal ARIMA (4/4)
++ Clear weekly seasonality
++ Residuals can be considered white noise (low p-value)
+```{r eval=F, highlight=T}
+
+    nortestARMA(res_tot, fit$sigma2)
+    #$pvalsdmuest
+    #[1] 4.927925e-06
+```
++ Overall company sales, daily aggregated, as exogen input of the model
++ **CSS-ML** method to optimize prediction of aggregated sales (better result, but sometimes fails to converge)
++ **CSS** method to optimize prediction of single subareas (less precise, but always converge)
+
+## Random Forest (1/3)
++ Flexible and robust
++ Importance plot
+
+```{r echo=F, tidy = T, comment = "#", collapse=T, fig.align="center"}
+prediction_length <- length(unique(test$data))
+
+rfs_model <- ranger(sample_n(train, 200),
+                       formula=vendite ~ (zona + area + sottoarea  + prod +
+                        giorno_mese + giorno_anno + settimana_anno + mese + anno  +
+                        stagione + primo_del_mese + cluster3 + cluster6 + cluster20 +
+                        latitudine + longitudine + giorno_settimana+weekend+vacanza),
+                       num.trees = 10, write.forest = T, verbose = F, num.threads = 4, importance = "impurity")
+
+
+rfs_importance <- importance(rfs_model)
+rfs_importance_df <- data.frame(name = names(rfs_importance), rfs_importance)
+plot <- ggplot(rfs_importance_df, aes(x = reorder(name, rfs_importance),
+                               y = rfs_importance)) +
+       geom_bar(stat='identity', colour = 'black') +
+       labs(x = 'Variables', title = 'Relative Variable Importance') +
+       coord_flip() +
+       theme_few() + ggtitle("Importance plot for a small portion of the dataset")
+print(plot)
+```
+
+## Random Forest (2/3)
++ We tried two approaches:
+  + Single model that uses the whole dataset
+  + Set of models, one for each subarea/product combination
++ At first second approach seemed to yield better results
++ Parameter tuning on the first approach proved it to be superior
++ Single model required a higher number of trees than each of the *multiple model* forests
++ **Out of bag** error was the main metric used to compare the different random forests model
++ We also employed *mean square error*, *MAPE* and *MAX APE*, computed on a test set.
+
+## Random Forest (3/3)
++ We used **ranger** package for R
+  + Much faster than the commonly used **randomForest**
+  + Built-in multi-threading
++ Final model used 1200 trees
+  + Using more trees didn't reduce by a significant amount the *out of bag* error and the *MSE* on the test set, and proved to be computationally prohibitive
+  
+```{r eval=F}
+    rfs_model <- ranger(train_set, formula=vendite ~ (zona + area + sottoarea  + prod + giorno_mese + giorno_anno + settimana_anno + mese + anno + stagione + primo_del_mese + cluster3 + cluster6 + cluster20 + latitudine + longitudine + giorno_settimana + weekend + vacanza), num.trees = 1200, write.forest = T, verbose = T, num.threads = 4, ...)
+```                    
+## XGBoost (1/4)
++ eXtreme Gradient Boosting: classification and regression algorithm based on gradient boosted trees
++ Characteristics:
+  + Efficiency
+  + Accuracy
+  + Feasibility
++ Most successful algorithm used in Kaggle's competitions
+
+## XGBoost (2/4)
++ Same approach as with Random Forest:
+    + Single model that uses the whole dataset
+    + Set of models, one for each subarea/product combination
++ Used XGBoost's crossvalidation function to get insights of the quality of the two predictive models
+  + Built-in metrics:
+    + **root mean square error** (RMSE)
+    + **logarithmic loss** (logloss)
+    + **mean average precision** (MAE)
++ Tried different:
+    + Set of features
+    + Values of tuning parameters (**nrounds**, **eta**, **gamma**, ...)
+
+<!--    
+```{r eval=F, highlight=T, tidy=T}
+   
+    xgb.cv(data=xg_train, nrounds = n_rounds, nthread = 4,
+     watchlist=list(train=xg_train), eta = 0.07, nfold=10,
+     eval.metric=c("logloss","rmse","map"), tree_method="exact")
+```                    
+-->
+
+## XGBoost (3/4)
++ Used XGBoost's watchlist and evalutaion metric to compare training and test error
++ Performed early stopping of training to prevent overfitting of the training data
+```{r eval=F, highlight=T}
+    xgb_model <- xgb.train(data=xg_train, nrounds = n_rounds,
+     nthread = 4, eta = eta_value, watchlist = list(train=xg_train,
+     test=xg_test), early.stop.round = 5, maximize = F)
+    xgb_pred <- predict(xgb_model, xg_test)
+```                    
++ Predictions on the test data compared with the real data using:
+    + mean absolute percentage error (MAPE)
+    + max absolute percentage error
++ Results showed that the single model was performing slightly better than the *multiple* one
+
+## XGBoost (4/4)
++ Final model
+    + features: *zona, area, sottoarea, prod, giorno_settimana, giorno_mese, giorno_anno, settimana_anno, mese, anno, weekend, primo_del_mese, vacanza, stagione, cluster3, cluster6, cluster20, latitudine, longitudine*
+    + label: *vendite*
+    + nrounds: 900
+    + eta: 0.1
+    + gamma: default
+  
+## Results and Ensemble (1/5)
++ **XGBoost** proved to be the most powerful model
++ We looked at **mean square error** over the various product/subareas combination
+  + In some occasions *Sarima* and *Random Forest* would provide better predictions
++ We decided to take this into account and build an ensemble model
+  + Uses predictions of the three models
+  + Predictions weighted according to the estimated *mean square error* of each produc/subarea combination in the test set
+
+## Results and Ensemble (2/5)
+
+
+$$prediction = prediction_{xgboost} \cdot w_{xgboost} +$$
+              $$prediction_{forest} \cdot w_{forest} +$$
+              $$prediction_{sarima} \cdot w_{sarima}$$
+
+## Results and Ensemble (3/5)
+
+
+With:
+
+$$w_{xgboost} = \frac{w_{xgboost}^{-1}}{mse_{xgboost}^{-1} + mse_{forest}^{-1} + mse_{sarima}^{-1}}$$
+$$w_{forest} = \frac{w_{forest}^{-1}}{mse_{xgboost}^{-1} + mse_{forest}^{-1} + mse_{sarima}^{-1}}$$
+$$w_{sarima} = \frac{w_{sarima}^{-1}}{mse_{xgboost}^{-1} + mse_{forest}^{-1} + mse_{sarima}^{-1}}$$
+
+## Results and Esemble (4/5)
++ Weighting done without using the prediction for the outlier subareas
++ Performances of the models:
+  + **MSE**, **MAPE**, **MAXAPE** being computed on a 10-days length test set
+  + *Out of bag*, *Logloss* being computed by the Random forest training and the Xgboost cross-validation, respectively
+  + We also considered the subareas for which we manually predicted 0 sales
+
+## Results and Esemble (5/5)
+
+| **MODEL** | **MSE** | **MAPE** | **MAXAPE** | **OTHER** |
+|:------:|:------:|:------:|:------:|:------:|
+| **Sarima** | 2.146717  | 0.2788613 | 3.472367 | - | 
+| **Random Forest** | 2.179245 | 0.2865883 |4.188574 | *Out of bag:* 1.771598 | 
+| **XGBoost** |  1.992626 |  0.2705864 | 3.95667 | *Logloss:* -29.58445 | 
+| **Ensemble** | 1.902922 | 0.2614705 | 3.822493 | - |
