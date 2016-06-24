@@ -86,7 +86,7 @@ ggplot(zona_dataset, aes(x = zona, y = vendite, fill = prod)) +
 
     
 **Outlier and missing values**: the dataset doesn't explicitely contains missing values (i.e. NA or similar values). There is however of missing subarea (**51**) and a number of outliers; as areas are mapped to an arbitrary number of subareas (and each subarea is mapped to exactly one area), there is no reason to believe that the missing subarea should negatively affect other predictions. 
-On the other hands, the extremely high sales values at *"30/6/2014"*, and the lack of sales over the period from *"2014-03-19"* to *"2014-03-25"* can be considered outliers and missing values: indeed, these events seems to be purely random and not correlated to any subsequent behaviour of the sales. We decided to replace these values with a prediction (see "Data preparation" for further details regarding the metodology).  
+On the other hands, the extremely high sales values at *"2014-06-30"*, and the lack of sales on the *"2014-01-01"* and over the period from *"2014-03-19"* to *"2014-03-25"* can be considered outliers and missing values: indeed, these events seems to be purely random and not correlated to any subsequent behaviour of the sales. We decided to replace these values with a prediction (see "Data preparation" for further details regarding the metodology).  
     
 A number of subareas displays unusual sales behaviours: subarea **20**, and subareas **32** and **78** (relatively to product 2) have mostly no sales. We then decided to inspect the time-series of subareas and of the other subareas, to understand if they displayed a predictable internal structure or if they resembled white noise.   
 The *Box-Pierce* test statistic examines if a univariate time-series is composed of independent observations: this is the case of white noise or of constant signals, whose best predictor is the mean of the signal itself.    
@@ -151,7 +151,7 @@ In this section we discuss the process of further cleaning the data, and the ide
     + Year.
   
 
-* Add a "Weekend" column: is a certain day a saturday or a sunday?)
+* Add a "Weekend" column: is a certain day a saturday or a sunday?
 * Add "Holiday": is a certain day an Italian holiday (Christmas, Easter, etc...)
 * Add "First of the month": we noticed that during the first day of the month sales are generally lower. Out of curiosity, we added a boolean variable to explicitely keep track of whether a day is the first of the month or not.
   
@@ -169,7 +169,7 @@ Note that to perform predictions over test and validation sets we also used the 
     
 * We replaced the outliers and the missing values identified before with a prediction found through a *Random Forest* model:
 As these values are located in the middle of the dataset, instead that at the end, a *Sarima* model wouldn't be as effective, as it could use fewer consecutive data for training.  
-The values replaced are the ones at *"2014-01-01"*, *"30/6/2014"*, and from *"2014-03-19"* to *"2014-03-25"* (in the 2 following years, sales at *"01-01"* are usually rather low, but never completely 0 as in 2014)
+The values replaced are the ones at *"2014-01-01"*, *"2014-6-30"*, and from *"2014-03-19"* to *"2014-03-25"* (in the 2 following years, sales at *"01-01"* are usually rather low, but never completely 0 as in 2014)
 
 **Coordinates clustering**
 
@@ -425,7 +425,7 @@ We used builtin XGBoost metrics **root mean square error** (RMSE), **logarithmic
     xgb.cv(data=xg_train, nrounds = n_rounds, nthread = 4, watchlist=list(train=xg_train), eta = 0.07,
                           nfold=10, eval.metric=c("logloss","rmse","map"), tree_method="exact")
 
-We used XGBoost's watchlist and evaluation metrics to keep an eye on the training and test error to perform early stopping of training technique to prevent overfitting of the test data, this helped us to improve the accuracy of the prediction on the test set.
+XGBoost watchlist allows to estimate the prediction error over a given testset during the training phase. This gives a more robust measurement of the model quality and is helpful to avoid overfitting the traning set. Early stopping can be used to halt the training if the error over the testset doesn't decrease over a certain amount of iterations, furtherly reducing the risk of overfitting.
     
     xgb_model <- xgb.train(data=xg_train, nrounds = n_rounds, nthread = 4, eta = eta_value,
                   watchlist = list(train=xg_train, test=xg_test), early.stop.round = 5, maximize = F)
@@ -436,9 +436,9 @@ Once the prediction was ready we applied also mean absolute percentage error (MA
 Features and parameters for the final model:
 
 * features: *zona, area, sottoarea, prod, giorno_settimana, giorno_mese, giorno_anno, settimana_anno, mese, anno, weekend, primo_del_mese, vacanza, stagione, cluster3, cluster6, cluster20, latitudine, longitudine*
-* label: vendite
-* nrounds: 700
-* eta: 0.07
+* label: *vendite*
+* nrounds: 900
+* eta: 0.1
 * gamma: default
  
 ### RESULTS       
