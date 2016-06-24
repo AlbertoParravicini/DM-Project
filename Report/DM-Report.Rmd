@@ -488,17 +488,17 @@ output: html_document
 ### Analyze the predictions!
 
 ```{r echo = FALSE}
-dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
+dataset <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 prediction_length <- 10
 dataset$data <- as.Date(dataset$data)
 train <- filter(dataset, data <= max(data) - prediction_length)
 train <- filter(train, data > max(data) - prediction_length)
 test <- filter(dataset, data > max(data) - prediction_length)
 
-pred_xgboost <- read.csv("~/DM-Project/Results/predizione_xgboost_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
-pred_forest <- read.csv("~/DM-Project/Results/predizione_random_forest_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
-pred_sarima <- read.csv("~/DM-Project/Results/predizione_sarima_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
-pred_ensemble <- read.csv("~/DM-Project/Results/PREDIZIONE_CON_PESI_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
+pred_xgboost <- read.csv("../Results/predizione_xgboost_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
+pred_forest <- read.csv("../Results/predizione_random_forest_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
+pred_sarima <- read.csv("../Results/predizione_sarima_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
+pred_ensemble <- read.csv("../Results/PREDIZIONE_CON_PESI_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
 
 pred_xgboost$data <- as.Date(pred_xgboost$data)
 pred_forest$data <- as.Date(pred_forest$data)
@@ -543,19 +543,19 @@ dataset_polimi <- read.csv("../Modified data/dataset_polimi_final_with_holidays_
 
   cols <- c("train" = "#000000", "test"="#f04546","xgboost"="#3591d1","forest"="#62c76b", "sarima" = "#123abc", "ensemble" = "#ccc333")
 
-  p <- ggplot(train, aes(x = data, y = vendite, col = "train")) + geom_line(size = 1) + geom_point(size=2) + geom_line(data=test, aes(x=data, y = vendite, col = "test"),size = 1) + geom_point(data=test, aes(x=data, y = vendite, col = "test"),size = 2) + ggtitle("Predictions on the test set, over 10 days") + theme_minimal() + xlab("Data") + ylab("Numero di vendite")
+  p <- ggplot(train, aes(x = data, y = vendite, col = "train")) + geom_line(size = 1.2) + geom_point(size=3) + geom_line(data=test, aes(x=data, y = vendite, col = "test"),size = 1.2) + geom_point(data=test, aes(x=data, y = vendite, col = "test"),size = 3) + ggtitle("Predictions on the test set, over 10 days") + theme_minimal() + xlab("Data") + ylab("Numero di vendite")
 
   if (input$sarima) {
-    p <- p + geom_line(data=pred_sarima, aes(x=data, y = vendite, col = "sarima"),size = 1) + geom_point(size = 2,data=pred_sarima, aes(x=data, y = vendite, col = "sarima"))
+    p <- p + geom_line(data=pred_sarima, aes(x=data, y = vendite, col = "sarima"),size = 1.2) + geom_point(size = 3,data=pred_sarima, aes(x=data, y = vendite, col = "sarima"))
   }
   if (input$xgboost) {
-    p <- p + geom_line(data=pred_xgboost, aes(x=data, y = vendite, col = "xgboost"),size = 1) + geom_point(size = 2,data=pred_xgboost, aes(x=data, y = vendite, col = "xgboost"))
+    p <- p + geom_line(data=pred_xgboost, aes(x=data, y = vendite, col = "xgboost"),size = 1.2) + geom_point(size = 3,data=pred_xgboost, aes(x=data, y = vendite, col = "xgboost"))
   }
   if (input$forest) {
-    p <- p + geom_line(data=pred_forest, aes(x=data, y = vendite, col = "forest"),size = 1) + geom_point(size = 2,data=pred_forest, aes(x=data, y = vendite, col = "forest"))
+    p <- p + geom_line(data=pred_forest, aes(x=data, y = vendite, col = "forest"),size = 1.2) + geom_point(size = 3,data=pred_forest, aes(x=data, y = vendite, col = "forest"))
   }
   if (input$ensemble) {
-    p <- p + geom_line(data=pred_ensemble, aes(x=data, y = vendite, col = "ensemble"),size = 1) + geom_point(size = 2,data=pred_ensemble, aes(x=data, y = vendite, col = "ensemble"))
+    p <- p + geom_line(data=pred_ensemble, aes(x=data, y = vendite, col = "ensemble"),size = 1.2) + geom_point(size = 3,data=pred_ensemble, aes(x=data, y = vendite, col = "ensemble"))
   }
 
   p <- p + scale_colour_manual(name="Time series",values=cols)
