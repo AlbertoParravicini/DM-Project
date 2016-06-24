@@ -1,6 +1,6 @@
 ---
 title: "DM-Report"
-author: "Alberto Parravicini"
+author: "Alberto Parravicini, Simone Ripamonti, Luca Stornaiuolo"
 date: "22 giugno 2016"
 output:
   html_document: 
@@ -174,6 +174,7 @@ The values replaced are the ones at *"2014-01-01"*, *"30/6/2014"*, and from *"20
 **Coordinates clustering**
 
 As we were provided the GPS coordinates of each subarea, we plotted their latitude and longitute on a map, grouping them by zone and giving each zone a different color. We noted how the division by zones/areas/subareas was partially consistent with what we expected (division by regions, etc...), but it wasn't as *smooth* as one might desire. Morevoer, the division by zones was already quite fine grained (about 20), so we decided to build a higher level hierarchy, to keep into account other geographical subdivision of Italy.
+
 ```{r echo=F, warning=F,fig.align="center"}
   dataset_polimi <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 
@@ -186,6 +187,7 @@ As we were provided the GPS coordinates of each subarea, we plotted their latitu
       }
     }
 ```
+
 We decided to perform a **Knee-Elbow** analysis to understand how the subareas could be grouped together in a different way than the one provided by zones and areas. First of all we built a **hierarchical clustering**.
     
 ```{r echo=F, fig.align="center"}
@@ -201,7 +203,7 @@ We decided to perform a **Knee-Elbow** analysis to understand how the subareas c
         cl <- hclust(dm)
 ```
     
-Given the hierarchical clustering result, we plotted WSS and BSS errors
+Given the hierarchical clustering result, we plotted WSS and BSS errors.
     
 ```{r echo=F}
         # FIX CODE!    
@@ -230,14 +232,18 @@ Given the hierarchical clustering result, we plotted WSS and BSS errors
 ```
 
 Then we decided to group subareas according to three different **k-means** runs:
-        * 3 cluster grouping, to distinguish between North, Center and South Italy.
-        * 6 cluster grouping, according to the value suggested by the **Knee-Elbow** analysis.
-        * 20 cluster grouping, to distiguish the different Italian region.
+
+* 3 cluster grouping, to distinguish between North, Center and South Italy.
+* 6 cluster grouping, according to the value suggested by the **Knee-Elbow** analysis.
+* 20 cluster grouping, to distiguish the different Italian region.
+
 We moved from hierarchical clustering to **k-means** as with the latter we would easily be able to assign new points to existing clusters, through the **clue** package. 
+
 ---
 runtime: shiny
 output: html_document
 ---
+
 ### Analyze the clusters!
 
 ```{r echo = FALSE}
@@ -246,7 +252,7 @@ dataset_polimi <- read.csv("../Modified data/dataset_polimi_final_with_holidays_
 ```
 ```{r echo=F, warning=F, tidy = T, comment = "#", collapse=T, fig.align="center"}
    selectInput("cluster", label = "Select a number of clusters:",
-               choices = c("3 clusters", "6 clusters", "20 clusters"), selected = "3 clusters")
+               choices = c("3 clusters", "6 clusters", "20 clusters"), selected = "6 clusters")
 
 renderPlot({
     if (input$cluster == "3 clusters")
@@ -343,7 +349,7 @@ print(p)
 ```
         
 From a simple inspection of the *autocorrelation function*, we can see how the time-series has a clear weekly seasonality.  
-After various trials, by making use of metrics such as the *mean squared error*, the *AIC*[^1], and the estimated variance of the parameters, we opted for a **(2, 1, 1)(4, 1, 4)_7** model.  
+After various trials, by making use of metrics such as the *mean squared error*, the *AIC*[^1], and the estimated variance of the parameters, we opted for a $(2, 1, 1)(4, 1, 4)_7$ model.  
 The residuals of this *Seasonal ARIMA* can be considered white noise (low p-value: very likely to be white noise).
 
     nortestARMA(res_tot, fit$sigma2)
@@ -403,9 +409,10 @@ The final random forest used 1200 trees. Using more trees didn't reduce by a sig
 ### XGBoost:
     
 eXtreme Gradient Boosting is a classification and regression algorithm based on gradient boosted trees that is widely used due to some winning features:[^2]
-        * Efficiency: automatic parallel computation on a single machine and possibility to be run on a cluster
-        * Accuracy: good results for most of the data sets, even with heterogeneuos data types
-        * Feasibility: customized objective function, evaluation metrics and lots of tunable parameters
+
+* Efficiency: automatic parallel computation on a single machine and possibility to be run on a cluster
+* Accuracy: good results for most of the data sets, even with heterogeneuos data types
+* Feasibility: customized objective function, evaluation metrics and lots of tunable parameters
         
 
 
@@ -427,11 +434,12 @@ We used XGBoost's watchlist and evaluation metrics to keep an eye on the trainin
 Once the prediction was ready we applied also mean absolute percentage error (MAPE[^3]) and max absolute percentage error. These metrics helped us to understand that the single model was performing slightly better than the multiple one, so we decided to focus our efforts on the former.
 
 Features and parameters for the final model:
-        * features: *zona, area, sottoarea, prod, giorno_settimana, giorno_mese, giorno_anno, settimana_anno, mese, anno, weekend, primo_del_mese, vacanza, stagione, cluster3, cluster6, cluster20, latitudine, longitudine*
-        * label: vendite
-        * nrounds: 700
-        * eta: 0.07
-        * gamma: default
+
+* features: *zona, area, sottoarea, prod, giorno_settimana, giorno_mese, giorno_anno, settimana_anno, mese, anno, weekend, primo_del_mese, vacanza, stagione, cluster3, cluster6, cluster20, latitudine, longitudine*
+* label: vendite
+* nrounds: 700
+* eta: 0.07
+* gamma: default
  
 ### RESULTS       
 Among the three models (*Sarima*, *Random Forest*, *XGBoost*), **XGBoost** proved to be the most powerful one; however, by looking at the **mean square error** computed over the various product/subareas combinations of the test set, we noticed how in some occasion *Sarima* and *Random forest* would provide better predictions.
@@ -450,12 +458,14 @@ $$w_{sarima} = \frac{w_{sarima}^{-1}}{mse_{xgboost}^{-1} + mse_{forest}^{-1} + m
 
 Note that the weighting was done without using the predictions for the outlier subareas (the ones for which we predicted 0 sales over the period), to avoid skewing the results with handmade predictions.
 
+The results below list the performances of the various models, with **MSE**, **MAPE**, **MAXAPE** being computed on a 10-days length test set, and *Out of bag*, *Logloss* being computed by the Random forest training and the Xgboost cross-validation, respectively. In all cases, we also considered the subareas for which we manually predicted 0 sales.
+
 | **MODEL** | **MSE** | **MAPE** | **MAXAPE** | **OTHER** |
 |:------:|:------:|:------:|:------:|:------:|
-| **Sarima** | 2.146717  | 0.3211637 | 1.028536 | - | 
+| **Sarima** | 2.146717  | 0.2788613 | 3.472367 | - | 
 | **Random Forest** | 2.179245 | 0.2865883 |4.188574 | *Out of bag:* 1.771598 | 
-| **XGBoost** |  1.992626 |  0.2743475 | 4.012398 | *Logloss:* -29.58445 | 
-| **Ensemble** | 1.902922 | - | - | - |
+| **XGBoost** |  1.992626 |  0.2705864 | 3.95667 | *Logloss:* -29.58445 | 
+| **Ensemble** | 1.902922 | 0.2614705 | 3.822493 | - |
 
 [^1]: http://www4.ncsu.edu/~shu3/Presentation/AIC.pdf
 [^2]: http://www.slideshare.net/ShangxuanZhang/xgboost

@@ -224,7 +224,9 @@ compute_errors_2 <- function(prediction, test, write = F) {
   return(results)
 }
 
-
-
+max(abs(test$vendite - test$predizione))/mean(test$vendite)
+max(abs(test$vendite - xgboost_TEST$vendite))/mean(test$vendite)
+max(abs(test$vendite - sarima_TEST$vendite))/mean(test$vendite)
+max(abs(test$vendite - random_forest_TEST$vendite))/mean(test$vendite)
 
 
