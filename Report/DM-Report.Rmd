@@ -541,21 +541,21 @@ dataset_polimi <- read.csv("../Modified data/dataset_polimi_final_with_holidays_
   pred_xgboost <- filter(pred_xgboost, prod == input$sel_prod, sottoarea == input$sel_subarea)
   pred_ensemble <- filter(pred_ensemble, prod == input$sel_prod, sottoarea == input$sel_subarea)
 
-  cols <- c("train" = "#000000", "test"="#f04546","xgboost"="#3591d1","forest"="#62c76b", "sarima" = "#123abc", "ensemble" = "#ccc333")
+  cols <- c("train" = "#000000", "test"="#604020","xgboost"="#e65c00","forest"="#009933", "sarima" = "#e6005c", "ensemble" = "#0059b3")
 
-  p <- ggplot(train, aes(x = data, y = vendite, col = "train")) + geom_line(size = 1.2) + geom_point(size=3) + geom_line(data=test, aes(x=data, y = vendite, col = "test"),size = 1.2) + geom_point(data=test, aes(x=data, y = vendite, col = "test"),size = 3) + ggtitle("Predictions on the test set, over 10 days") + theme_minimal() + xlab("Data") + ylab("Numero di vendite")
+  p <- ggplot(train, aes(x = data, y = vendite, col = "train")) + geom_line(size = 1.2, alpha = 0.8) + geom_point(size=4) + geom_line(data=test, aes(x=data, y = vendite, col = "test"),size = 1.2, alpha = 0.8) + geom_point(data=test, aes(x=data, y = vendite, col = "test"),size = 3) + ggtitle("Predictions on the test set, over 10 days") + theme_minimal() + xlab("Data") + ylab("Numero di vendite")
 
   if (input$sarima) {
-    p <- p + geom_line(data=pred_sarima, aes(x=data, y = vendite, col = "sarima"),size = 1.2) + geom_point(size = 3,data=pred_sarima, aes(x=data, y = vendite, col = "sarima"))
+    p <- p + geom_line(data=pred_sarima, aes(x=data, y = vendite, col = "sarima"),size = 1.2, alpha = 0.8) + geom_point(size = 4,data=pred_sarima, aes(x=data, y = vendite, col = "sarima"))
   }
   if (input$xgboost) {
-    p <- p + geom_line(data=pred_xgboost, aes(x=data, y = vendite, col = "xgboost"),size = 1.2) + geom_point(size = 3,data=pred_xgboost, aes(x=data, y = vendite, col = "xgboost"))
+    p <- p + geom_line(data=pred_xgboost, aes(x=data, y = vendite, col = "xgboost"),size = 1.2, alpha = 0.8) + geom_point(size = 4,data=pred_xgboost, aes(x=data, y = vendite, col = "xgboost"))
   }
   if (input$forest) {
-    p <- p + geom_line(data=pred_forest, aes(x=data, y = vendite, col = "forest"),size = 1.2) + geom_point(size = 3,data=pred_forest, aes(x=data, y = vendite, col = "forest"))
+    p <- p + geom_line(data=pred_forest, aes(x=data, y = vendite, col = "forest"),size = 1.2, alpha = 0.8) + geom_point(size = 4,data=pred_forest, aes(x=data, y = vendite, col = "forest"))
   }
   if (input$ensemble) {
-    p <- p + geom_line(data=pred_ensemble, aes(x=data, y = vendite, col = "ensemble"),size = 1.2) + geom_point(size = 3,data=pred_ensemble, aes(x=data, y = vendite, col = "ensemble"))
+    p <- p + geom_line(data=pred_ensemble, aes(x=data, y = vendite, col = "ensemble"),size = 1.2, alpha = 0.8) + geom_point(size = 4,data=pred_ensemble, aes(x=data, y = vendite, col = "ensemble"))
   }
 
   p <- p + scale_colour_manual(name="Time series",values=cols)
