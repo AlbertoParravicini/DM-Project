@@ -59,12 +59,25 @@ dataset[factorVars] <- lapply(dataset[factorVars], function(x) as.factor(x))
 ```
 ```{r echo=F, tidy = T, comment = "#", collapse=F, warning=F, fig.align="center"}
 
-p0 <- ggplot(dataset, aes(giorno_settimana, vendite)) + geom_boxplot(outlier.shape = NA, color = "#004d80", fill = "#008ae6", alpha = 0.7) + scale_y_continuous(limits = c(0, 15)) + 
+p0 <- ggplot(dataset, aes(giorno_settimana, vendite)) + geom_boxplot(outlier.shape = NA, color = "#004d80", fill = "#008ae6", alpha = 0.7) +  
   ggtitle("Sales for each day of the week, divided by product") + theme_bw() + facet_grid(. ~ prod)
+
+  
+p0 <- p0 + scale_x_discrete(breaks=1:7, labels=c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"))
+p0 <- p0 + scale_y_continuous(breaks=seq(0, 15), labels=seq(0, 15), limits = c(0,15))
+p0 <- p0 + theme(axis.text.x  = element_text(angle=90, vjust=0.4))
+p0 <- p0 + labs(x = "Day of the week", y = "Sales")
+
 print(p0)
 
-p0 <- ggplot(dataset, aes(mese, vendite)) + geom_boxplot(outlier.shape = NA, color = "#004d80", fill = "#008ae6", alpha = 0.7) + scale_y_continuous(limits = c(0, 15)) + 
+p0 <- ggplot(dataset, aes(mese, vendite)) + geom_boxplot(outlier.shape = NA, color = "#004d80", fill = "#008ae6", alpha = 0.7) +  
   ggtitle("Sales for each month") + theme_minimal()
+
+p0 <- p0 + scale_x_discrete(breaks=1:12, labels=c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"))
+p0 <- p0 + scale_y_continuous(breaks=seq(0, 10), labels=seq(0, 10), limits = c(0,10))
+p0 <- p0 + theme(axis.text.x  = element_text(angle=90, vjust=0.4))
+p0 <- p0 + labs(x = "Month", y = "Sales")
+
 print(p0)
 
 zona_dataset <- dataset %>%
@@ -128,7 +141,7 @@ sliderInput("sottoarea", label = "Select a subarea:",
 renderPlot({
   selected <- filter(dataset_polimi, sottoarea == input$sottoarea, prod == input$prodotto)
 
-  tsdisplay(selected$vendite)
+  tsdisplay(selected$vendite, main = "Analysis of the selected time-series")
 })
 ```
 
@@ -151,7 +164,7 @@ In this section we discuss the process of further cleaning the data, and the ide
     + Year.
   
 
-* Add a "Weekend" column: is a certain day a saturday or a sunday?)
+* Add a "Weekend" column: is a certain day a saturday or a sunday?
 * Add "Holiday": is a certain day an Italian holiday (Christmas, Easter, etc...)
 * Add "First of the month": we noticed that during the first day of the month sales are generally lower. Out of curiosity, we added a boolean variable to explicitely keep track of whether a day is the first of the month or not.
   
@@ -466,6 +479,96 @@ The results below list the performances of the various models, with **MSE**, **M
 | **Random Forest** | 2.179245 | 0.2865883 |4.188574 | *Out of bag:* 1.771598 | 
 | **XGBoost** |  1.992626 |  0.2705864 | 3.95667 | *Logloss:* -29.58445 | 
 | **Ensemble** | 1.902922 | 0.2614705 | 3.822493 | - |
+
+
+---
+runtime: shiny
+output: html_document
+---
+### Analyze the predictions!
+
+```{r echo = FALSE}
+dataset <- read.csv("~/DM-Project/Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
+prediction_length <- 10
+dataset$data <- as.Date(dataset$data)
+train <- filter(dataset, data <= max(data) - prediction_length)
+train <- filter(train, data > max(data) - prediction_length)
+test <- filter(dataset, data > max(data) - prediction_length)
+
+pred_xgboost <- read.csv("~/DM-Project/Results/predizione_xgboost_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
+pred_forest <- read.csv("~/DM-Project/Results/predizione_random_forest_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
+pred_sarima <- read.csv("~/DM-Project/Results/predizione_sarima_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
+pred_ensemble <- read.csv("~/DM-Project/Results/PREDIZIONE_CON_PESI_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
+
+pred_xgboost$data <- as.Date(pred_xgboost$data)
+pred_forest$data <- as.Date(pred_forest$data)
+pred_sarima$data <- as.Date(pred_sarima$data)
+pred_ensemble$data <- as.Date(pred_ensemble$data)
+
+pred_forest <- pred_forest[order(pred_forest$prod, pred_forest$sottoarea, pred_forest$data), ]
+pred_sarima <- pred_sarima[order(pred_sarima$prod, pred_sarima$sottoarea, pred_sarima$data), ]
+pred_xgboost <- pred_xgboost[order(pred_xgboost$prod, pred_xgboost$sottoarea, pred_xgboost$data), ]
+pred_ensemble <- pred_ensemble[order(pred_ensemble$prod, pred_ensemble$sottoarea, pred_ensemble$data), ]
+```
+
+```{r echo = FALSE}
+dataset_polimi <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
+
+```
+```{r echo=F, tidy = T, comment = "#", collapse=T}
+
+
+      selectInput("sel_prod", label = "Select a product:",
+              choices = c(1, 2), selected = 1)
+
+      sliderInput("sel_subarea", label = "Select a subarea:",
+                    min = 1, max = length(unique(dataset_polimi$sottoarea)), value = 5, step = 1)
+       
+   
+      checkboxInput("sarima", label = "Sarima", value = TRUE)
+      checkboxInput("forest", label = "Random Forest", value = TRUE)
+      checkboxInput("xgboost", label = "XGBoost", value = TRUE)
+      checkboxInput("ensemble", label = "Ensemble", value = TRUE)
+    
+```
+```{r echo=F, tidy = T, comment = "#", collapse=F}
+      renderPlot({
+
+  train <- filter(train, prod == input$sel_prod, sottoarea == input$sel_subarea)
+  test <- filter(test, prod == input$sel_prod, sottoarea == input$sel_subarea)
+  pred_forest <- filter(pred_forest, prod == input$sel_prod, sottoarea == input$sel_subarea)
+  pred_sarima <- filter(pred_sarima, prod == input$sel_prod, sottoarea == input$sel_subarea)
+  pred_xgboost <- filter(pred_xgboost, prod == input$sel_prod, sottoarea == input$sel_subarea)
+  pred_ensemble <- filter(pred_ensemble, prod == input$sel_prod, sottoarea == input$sel_subarea)
+
+  cols <- c("train" = "#000000", "test"="#f04546","xgboost"="#3591d1","forest"="#62c76b", "sarima" = "#123abc", "ensemble" = "#ccc333")
+
+  p <- ggplot(train, aes(x = data, y = vendite, col = "train")) + geom_line(size = 1) + geom_point(size=2) + geom_line(data=test, aes(x=data, y = vendite, col = "test"),size = 1) + geom_point(data=test, aes(x=data, y = vendite, col = "test"),size = 2) + ggtitle("Predictions on the test set, over 10 days") + theme_minimal() + xlab("Data") + ylab("Numero di vendite")
+
+  if (input$sarima) {
+    p <- p + geom_line(data=pred_sarima, aes(x=data, y = vendite, col = "sarima"),size = 1) + geom_point(size = 2,data=pred_sarima, aes(x=data, y = vendite, col = "sarima"))
+  }
+  if (input$xgboost) {
+    p <- p + geom_line(data=pred_xgboost, aes(x=data, y = vendite, col = "xgboost"),size = 1) + geom_point(size = 2,data=pred_xgboost, aes(x=data, y = vendite, col = "xgboost"))
+  }
+  if (input$forest) {
+    p <- p + geom_line(data=pred_forest, aes(x=data, y = vendite, col = "forest"),size = 1) + geom_point(size = 2,data=pred_forest, aes(x=data, y = vendite, col = "forest"))
+  }
+  if (input$ensemble) {
+    p <- p + geom_line(data=pred_ensemble, aes(x=data, y = vendite, col = "ensemble"),size = 1) + geom_point(size = 2,data=pred_ensemble, aes(x=data, y = vendite, col = "ensemble"))
+  }
+
+  p <- p + scale_colour_manual(name="Time series",values=cols)
+
+  print(p)
+}, height = "auto")
+
+
+
+```
+
+
+
 
 [^1]: http://www4.ncsu.edu/~shu3/Presentation/AIC.pdf
 [^2]: http://www.slideshare.net/ShangxuanZhang/xgboost
