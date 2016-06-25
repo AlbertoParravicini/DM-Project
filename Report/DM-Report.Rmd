@@ -40,7 +40,7 @@ Below, a brief selection of these plots.
 
 ```{r echo=F, tidy = T, comment = "#", collapse=F, warning=F, fig.align="center"}
 
-dataset <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
+dataset <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 dataset <- dataset[ , !(names(dataset) %in% c("X"))]
 
 # Convert dates to class "Data"
@@ -98,10 +98,10 @@ ggplot(zona_dataset, aes(x = zona, y = vendite, fill = prod)) +
 ```
 
     
-**Outlier and missing values**: the dataset doesn't explicitely contains missing values (i.e. NA or similar values). There is however of missing subarea (**51**) and a number of outliers; as areas are mapped to an arbitrary number of subareas (and each subarea is mapped to exactly one area), there is no reason to believe that the missing subarea should negatively affect other predictions. 
-On the other hands, the extremely high sales values at *"30/6/2014"*, and the lack of sales over the period from *"2014-03-19"* to *"2014-03-25"* can be considered outliers and missing values: indeed, these events seems to be purely random and not correlated to any subsequent behaviour of the sales. We decided to replace these values with a prediction (see "Data preparation" for further details regarding the metodology).  
+**Outlier and missing values**: the dataset doesn't explicitely contains missing values (i.e. NA or similar values). There is however one missing subarea (**51**) and a number of outliers; as areas are mapped to an arbitrary number of subareas (and each subarea is mapped to exactly one area), there is no reason to believe that the missing subarea should negatively affect other predictions. 
+On the other hands, the extremely high sales values at *"2014-06-30"*, and the lack of sales at *"2014-01-01"*, and over the period from *"2014-03-19"* to *"2014-03-25"* can be considered outliers and missing values: indeed, these events seems to be purely random and not correlated to any subsequent behaviour of the sales. We decided to replace these values with a prediction (see **"Data preparation"** for further details regarding the metodology).  
     
-A number of subareas displays unusual sales behaviours: subarea **20**, and subareas **32** and **78** (relatively to product 2) have mostly no sales. We then decided to inspect the time-series of subareas and of the other subareas, to understand if they displayed a predictable internal structure or if they resembled white noise.   
+A number of subareas display unusual sales behaviours: subarea **20**, and subareas **32** and **78** (relatively to product 2) have mostly no sales. We then decided to inspect the time-series of these subareas and of the other subareas, to understand if they displayed a predictable internal structure or if they resembled white noise.   
 The *Box-Pierce* test statistic examines if a univariate time-series is composed of independent observations: this is the case of white noise or of constant signals, whose best predictor is the mean of the signal itself.    
 The null hypothesis of the *Box-Pierce* test is that the signal is made of independent observations: a low p-value implies that this isn't the case, and the signal has a more complex internal structure.
 
@@ -109,7 +109,7 @@ The null hypothesis of the *Box-Pierce* test is that the signal is made of indep
     
 ```{r echo=F, tidy = T, comment = "#", collapse=T, fig.align="center"}
 paste("Box-Pierce test for subarea 20, product 1")
-dataset_polimi <- read.csv("../Original data/dataset_polimi.csv", stringsAsFactors=FALSE)
+dataset_polimi <- read.csv("dm-report-documents/dataset_polimi.csv", stringsAsFactors=FALSE)
 subarea_20_p1 <- filter(dataset_polimi, Sottoarea == "Sottoarea_20", Categoria_prodotto == "Prodotto_1")
    
 Box.test(subarea_20_p1$Vendite)
@@ -126,7 +126,7 @@ output: html_document
 ### Analyze the time-series!
 
 ```{r echo = FALSE}
-dataset_polimi <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
+  dataset_polimi <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 
 ```
 ```{r echo=F, tidy = T, comment = "#", collapse=T}
@@ -146,12 +146,12 @@ renderPlot({
 ```
 
 
-Subarea 20, and subareas 32 and 78 (relatively to product 2) can indeed be considered deterministic signals with mean 0: using  the tuples referring these time-series in the training would not be beneficial, so we removed them from the dataset, and predicted sales equal to 0 *a-posteriori*. By using the geographical coordinates at our disposal we noted that these areas are close to Milan, Lamezia Terme and Potenza: unrelated cities that further confirm the hypothesis that keeping these values in the training set would not be useful. 
+Subarea 20, and subareas 32 and 78 (relatively to product 2) can indeed be considered deterministic signals with mean 0: using  the tuples referring to these time-series in the training would not be beneficial, so we removed them from the dataset, and predicted sales equal to 0 *a-posteriori*. By using the geographical coordinates at our disposal we noted that these areas are close to Milan, Lamezia Terme and Potenza: unrelated cities that further confirm the hypothesis that keeping these values in the training set would not be useful. 
 
 ***
     
 ## DATA PREPARATION: 
-In this section we discuss the process of further cleaning the data, and the ideas behind the feature engineering applied to the dataset.
+In this section we discuss the process of further cleaning the data, and the feature engineering we applied to the dataset.
 
 **Basic feature engineering**
 
@@ -165,7 +165,7 @@ In this section we discuss the process of further cleaning the data, and the ide
   
 
 * Add a "Weekend" column: is a certain day a saturday or a sunday?
-* Add "Holiday": is a certain day an Italian holiday (Christmas, Easter, etc...)
+* Add "Holiday": is a certain day an Italian holiday (Christmas, Easter, etc...)?
 * Add "First of the month": we noticed that during the first day of the month sales are generally lower. Out of curiosity, we added a boolean variable to explicitely keep track of whether a day is the first of the month or not.
   
   
@@ -176,20 +176,20 @@ In this section we discuss the process of further cleaning the data, and the ide
     + Aggregate sales of the entire company, day by day, divided by product and cumulative (i.e. how many product the company sold in a certain day).
     
 It is not possible to compute directly these values for dates above the one in the dataset: to overcome this issue, we built various *Sarima* models that predicted each of these time-series, over the desired prediction period.  
-The idea is that using a Sarima model built specifically for a certain time-series (e.g. the aggregate sales) can lead to a highly accurate prediction that can be beneficial to the other models. The cumulative sales didn't prove to be very useful, but the predicion of the aggregate sales improved sightly our results.  
+The idea is that using a *Sarima* model built specifically for a certain time-series (e.g. the aggregate sales) can lead to a highly accurate prediction that can be beneficial to the other models. The cumulative sales didn't prove to be very useful, but the predicion of the aggregate sales improved sightly our results.  
 
-Note that to perform predictions over test and validation sets we also used the predictions of these timeseries, instead of the real values that we had at our disposal (used for the training, obviously): if we used the latter, the results would be faked, as we'd be employing information unavailable in a real prediction.
+Note that to perform predictions over test and validation sets we substituted their real values of cumulative sales with our predictions: if we used the real values, the results would be faked, as we'd be employing information unavailable in a real prediction.
     
 * We replaced the outliers and the missing values identified before with a prediction found through a *Random Forest* model:
-As these values are located in the middle of the dataset, instead that at the end, a *Sarima* model wouldn't be as effective, as it could use fewer consecutive data for training.  
-The values replaced are the ones at *"2014-01-01"*, *"30/6/2014"*, and from *"2014-03-19"* to *"2014-03-25"* (in the 2 following years, sales at *"01-01"* are usually rather low, but never completely 0 as in 2014)
+As these values are located in the middle of the dataset, instead that at the end, a *Sarima* model wouldn't be as effective, as it could employ fewer consecutive data for training.  
+The values replaced are the ones at *"2014-01-01"*, *"2014-06-30"*, and from *"2014-03-19"* to *"2014-03-25"* (in the 2 following years, sales at *"01-01"* are usually rather low, but never completely 0 as in 2014)
 
 **Coordinates clustering**
 
 As we were provided the GPS coordinates of each subarea, we plotted their latitude and longitute on a map, grouping them by zone and giving each zone a different color. We noted how the division by zones/areas/subareas was partially consistent with what we expected (division by regions, etc...), but it wasn't as *smooth* as one might desire. Morevoer, the division by zones was already quite fine grained (about 20), so we decided to build a higher level hierarchy, to keep into account other geographical subdivision of Italy.
 
 ```{r echo=F, warning=F,fig.align="center"}
-  dataset_polimi <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
+  dataset_polimi <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 
     map <- getMap(resolution = "low")
     plot(map, xlim = c(5, 20), ylim = c(36, 47), asp = 1)
@@ -201,10 +201,10 @@ As we were provided the GPS coordinates of each subarea, we plotted their latitu
     }
 ```
 
-We decided to perform a **Knee-Elbow** analysis to understand how the subareas could be grouped together in a different way than the one provided by zones and areas. First of all we built a **hierarchical clustering**.
+We decided to perform a **Knee-Elbow** analysis to understand how the subareas could be grouped together in a different way than the one provided by zones and areas. First of all we built a **hierarchical clustering**, and from its results, we plotted WSS and BSS errors.
     
 ```{r echo=F, fig.align="center"}
- gps <- read.csv("../Original data/gps.csv", stringsAsFactors = F)
+ gps <- read.csv("dm-report-documents/gps.csv", stringsAsFactors = F)
         # init the seed to be able to repeat the experiment
         set.seed(1234)
         # build the distance matrix
@@ -215,9 +215,6 @@ We decided to perform a **Knee-Elbow** analysis to understand how the subareas c
         # generate the hierarchical clustering
         cl <- hclust(dm)
 ```
-    
-Given the hierarchical clustering result, we plotted WSS and BSS errors.
-    
 ```{r echo=F}
         # FIX CODE!    
   
@@ -260,7 +257,7 @@ output: html_document
 ### Analyze the clusters!
 
 ```{r echo = FALSE}
-dataset_polimi <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
+dataset_polimi <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 
 ```
 ```{r echo=F, warning=F, tidy = T, comment = "#", collapse=T, fig.align="center"}
@@ -319,7 +316,7 @@ As an example, **Auto-correlation**, **Partial auto-correlation**, to understand
 
 ```{r echo=F, tidy = T, comment = "#", collapse=T, fig.align="center"}
 
-dataset <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE, row.names=NULL)
+dataset <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE, row.names=NULL)
 dataset <- dataset[ , !(names(dataset) %in% c("X"))]
 if (class(dataset$vendite) == "factor") {
   dataset$vendite <- as.numeric(levels(dataset$vendite))[dataset$vendite]
@@ -433,12 +430,12 @@ As with **Random Forest** we tried two different approaches at modeling the data
 
 We run XGBoost's crossvalidation function to get accurate insights of the quality of the two predictive models. We tested and tuned both models by selecting different combinations of attributes and by trying different values for the parameters **nrounds** (number of iterations), **eta** (learning rate), **gamma** (minimum loss reduction to partition on a leaf node of the tree) and others.
 
-We used builtin XGBoost metrics **root mean square error** (RMSE), **logarithmic loss** (logloss) and **mean average precision** (MAE) to evaluate the quality of the model while it was building. 
+We used builtin XGBoost metrics **root mean square error** (RMSE), **logarithmic loss** (logloss) and **mean average precision** (MAP) to evaluate the quality of the model while it was building. 
     
-    xgb.cv(data=xg_train, nrounds = n_rounds, nthread = 4, watchlist=list(train=xg_train), eta = 0.07,
+    xgb.cv(data=xg_train, nrounds = n_rounds, nthread = 4, watchlist=list(train=xg_train), eta = 0.1,
                           nfold=10, eval.metric=c("logloss","rmse","map"), tree_method="exact")
 
-We used XGBoost's watchlist and evaluation metrics to keep an eye on the training and test error to perform early stopping of training technique to prevent overfitting of the test data, this helped us to improve the accuracy of the prediction on the test set.
+We used XGBoost's watchlist and evaluation metrics to keep an eye on the training and test error and perform *early stopping* to prevent overfitting of the test data. This helped us to improve the accuracy of the prediction on the test set.
     
     xgb_model <- xgb.train(data=xg_train, nrounds = n_rounds, nthread = 4, eta = eta_value,
                   watchlist = list(train=xg_train, test=xg_test), early.stop.round = 5, maximize = F)
@@ -450,8 +447,8 @@ Features and parameters for the final model:
 
 * features: *zona, area, sottoarea, prod, giorno_settimana, giorno_mese, giorno_anno, settimana_anno, mese, anno, weekend, primo_del_mese, vacanza, stagione, cluster3, cluster6, cluster20, latitudine, longitudine*
 * label: vendite
-* nrounds: 700
-* eta: 0.07
+* nrounds: 900
+* eta: 0.1
 * gamma: default
  
 *** 
@@ -467,9 +464,9 @@ $$prediction = prediction_{xgboost} \cdot w_{xgboost} + prediction_{forest} \cdo
 
 With:
 
-$$w_{xgboost} = \frac{w_{xgboost}^{-1}}{mse_{xgboost}^{-1} + mse_{forest}^{-1} + mse_{sarima}^{-1}}$$
-$$w_{forest} = \frac{w_{forest}^{-1}}{mse_{xgboost}^{-1} + mse_{forest}^{-1} + mse_{sarima}^{-1}}$$
-$$w_{sarima} = \frac{w_{sarima}^{-1}}{mse_{xgboost}^{-1} + mse_{forest}^{-1} + mse_{sarima}^{-1}}$$
+$$w_{xgboost} = \frac{mse_{xgboost}^{-1}}{mse_{xgboost}^{-1} + mse_{forest}^{-1} + mse_{sarima}^{-1}}$$
+$$w_{forest} = \frac{mse_{forest}^{-1}}{mse_{xgboost}^{-1} + mse_{forest}^{-1} + mse_{sarima}^{-1}}$$
+$$w_{sarima} = \frac{mse_{sarima}^{-1}}{mse_{xgboost}^{-1} + mse_{forest}^{-1} + mse_{sarima}^{-1}}$$
 
 Note that the weighting was done without using the predictions for the outlier subareas (the ones for which we predicted 0 sales over the period), to avoid skewing the results with handmade predictions.
 
@@ -490,17 +487,17 @@ output: html_document
 ### Analyze the predictions!
 
 ```{r echo = FALSE}
-dataset <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
+dataset <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 prediction_length <- 10
 dataset$data <- as.Date(dataset$data)
 train <- filter(dataset, data <= max(data) - prediction_length)
 train <- filter(train, data > max(data) - prediction_length)
 test <- filter(dataset, data > max(data) - prediction_length)
 
-pred_xgboost <- read.csv("../Results/predizione_xgboost_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
-pred_forest <- read.csv("../Results/predizione_random_forest_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
-pred_sarima <- read.csv("../Results/predizione_sarima_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
-pred_ensemble <- read.csv("../Results/PREDIZIONE_CON_PESI_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
+pred_xgboost <- read.csv("dm-report-documents/predizione_xgboost_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
+pred_forest <- read.csv("dm-report-documents/predizione_random_forest_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
+pred_sarima <- read.csv("dm-report-documents/predizione_sarima_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
+pred_ensemble <- read.csv("dm-report-documents/PREDIZIONE_CON_PESI_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
 
 pred_xgboost$data <- as.Date(pred_xgboost$data)
 pred_forest$data <- as.Date(pred_forest$data)
@@ -514,7 +511,7 @@ pred_ensemble <- pred_ensemble[order(pred_ensemble$prod, pred_ensemble$sottoarea
 ```
 
 ```{r echo = FALSE}
-dataset_polimi <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
+dataset_polimi <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 
 ```
 ```{r echo=F, tidy = T, comment = "#", collapse=T}
