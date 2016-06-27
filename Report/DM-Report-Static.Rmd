@@ -6,6 +6,9 @@ output:
   pdf_document: default
   html_document:
     theme: spacelab
+geometry: margin=0.5in
+fontsize: 10pt
+
 ---
 
 ```{r setup, include=FALSE}
@@ -118,12 +121,6 @@ paste("Box-Pierce test for subarea 22, product 1, for comparison (this timeserie
 Box.test(filter(dataset_polimi, Sottoarea == "Sottoarea_22", Categoria_prodotto == "Prodotto_1")$Vendite)
 
 ```
----
-runtime: shiny
-output: html_document
----
-### Analyze the time-series!
-
 ```{r echo = FALSE}
   dataset_polimi <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 
@@ -132,7 +129,7 @@ output: html_document
 
   selected <- filter(dataset_polimi, sottoarea == 20, prod == "1")
 
-  tsdisplay(selected$vendite, main = "Analysis of the selected time-series")
+  tsdisplay(selected$vendite, main = "Time-series, acf and parcor of subarea 20, product 1")
 
 ```
 
@@ -183,7 +180,7 @@ As we were provided the GPS coordinates of each subarea, we plotted their latitu
   dataset_polimi <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 
     map <- getMap(resolution = "low")
-    plot(map, xlim = c(5, 20), ylim = c(36, 47), asp = 1)
+    plot(map, xlim = c(5, 20), ylim = c(36, 47), asp = 1, main = "Original division by zone")
     for (i in unique(dataset_polimi$zona)){
       for (s in unique(filter(dataset_polimi, zona==i)$sottoarea)){
             temp <- filter(dataset_polimi, sottoarea==s)
@@ -240,12 +237,6 @@ Then we decided to group subareas according to three different **k-means** runs:
 
 We moved from hierarchical clustering to **k-means** as with the latter we would easily be able to assign new points to existing clusters, through the **clue** package. 
 
----
-runtime: shiny
-output: html_document
----
-
-### Analyze the clusters!
 
 ```{r echo = FALSE}
 dataset_polimi <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
@@ -254,7 +245,7 @@ dataset_polimi <- read.csv("dm-report-documents/dataset_polimi_final_with_holida
 ```{r echo=F, warning=F, tidy = T, comment = "#", collapse=T, fig.align="center"}
   
     map <- getMap(resolution = "low")
-    plot(map, xlim = c(5, 20), ylim = c(36, 47), asp = 1)
+    plot(map, xlim = c(5, 20), ylim = c(36, 47), asp = 1, main = "6 Clusters")
     for (i in unique(dataset_polimi[, "cluster6"])) {
       
         for (s in unique(filter(dataset_polimi, cluster6==i)$sottoarea)){
@@ -302,7 +293,7 @@ filtered_data <- filter(dataset, prod == 1, sottoarea == 1)
 train_length <- length(unique(train$data))
 ts_full <- zoo(filtered_data$vendite, order.by = filtered_data$data)
 
-tsdisplay(ts_full)
+tsdisplay(ts_full, main = "Time−series, acf and parcor of subarea 1, product 1")
 
 ts_train <- ts_full[1:train_length]
 ts_test <- ts_full[(train_length+1):(prediction_length+train_length)]
@@ -447,12 +438,6 @@ The results below list the performances of the various models, with **MSE**, **M
   | **Ensemble** | 1.876493 | 0.2614705 | 3.876331 | - |
 
 
----
-runtime: shiny
-output: html_document
----
-### Analyze the predictions!
-
 ```{r echo = FALSE}
 dataset <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 prediction_length <- 10
@@ -491,7 +476,7 @@ dataset_polimi <- read.csv("dm-report-documents/dataset_polimi_final_with_holida
 
   cols <- c("train" = "#000000", "test"="#604020","xgboost"="#e65c00","forest"="#009933", "sarima" = "#e6005c", "ensemble" = "#0059b3")
 
-  p <- ggplot(train, aes(x = data, y = vendite, col = "train")) + geom_line(size = 1.2, alpha = 0.8) + geom_point(size=4) + geom_line(data=test, aes(x=data, y = vendite, col = "test"),size = 1.2, alpha = 0.8) + geom_point(data=test, aes(x=data, y = vendite, col = "test"),size = 3) + ggtitle("Predictions on the test set, over 10 days") + theme_minimal() + xlab("Data") + ylab("Numero di vendite")
+  p <- ggplot(train, aes(x = data, y = vendite, col = "train")) + geom_line(size = 1.2, alpha = 0.8) + geom_point(size=4) + geom_line(data=test, aes(x=data, y = vendite, col = "test"),size = 1.2, alpha = 0.8) + geom_point(data=test, aes(x=data, y = vendite, col = "test"),size = 3) + ggtitle("Predictions on the test set for subarea 5, product 1 - 10 days") + theme_minimal() + xlab("Data") + ylab("Numero di vendite")
 
   
     p <- p + geom_line(data=pred_sarima, aes(x=data, y = vendite, col = "sarima"),size = 1.2, alpha = 0.8) + geom_point(size = 4,data=pred_sarima, aes(x=data, y = vendite, col = "sarima"))
