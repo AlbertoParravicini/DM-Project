@@ -128,5 +128,5 @@ risultati$Area <- paste('Area_', risultati$Area, sep = "")
 risultati$Sottoarea <- paste('Sottoarea_', risultati$Sottoarea, sep = "")
 risultati$Categoria_prodotto <- paste('Prodotto_', risultati$Categoria_prodotto, sep = "")
 
-write.csv(predset, file=paste("Results/PREDIZIONE_CON_PESI_", version, ".csv", sep = ""), row.names = F)
-write.csv(risultati, file=paste("Results/PREDIZIONE_FINALE_", version, ".csv", sep = ""), row.names = F)
+#write.csv(predset, file=paste("Results/PREDIZIONE_CON_PESI_", version, ".csv", sep = ""), row.names = F)
+#write.csv(risultati, file=paste("Results/PREDIZIONE_FINALE_", version, ".csv", sep = ""), row.names = F)
