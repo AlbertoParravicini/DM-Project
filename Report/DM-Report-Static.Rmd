@@ -3,9 +3,11 @@ title: "Data-Mining Project: BIP"
 author: "Alberto Parravicini, Simone Ripamonti, Luca Stornaiuolo"
 date: "22 giugno 2016"
 output:
-  html_document: 
+  pdf_document: default
+  html_document:
     theme: spacelab
-runtime: shiny
+geometry: margin=0.5in
+fontsize: 10pt
 
 ---
 
@@ -28,6 +30,10 @@ library(GMD)
 library(rworldmap)
 library(nortestARMA)
 ```
+#### Interactive Shiny report at: https://albertoparravicini.shinyapps.io/DM-Report/
+#### Repository at: https://github.com/ripa1993/DM-Project
+#### Forecasts over 10 days: https://github.com/ripa1993/DM-Project/blob/master/Results/PREDIZIONE_FINALE_FUTURE.csv
+#### Presentation at: https://albertoparravicini.shinyapps.io/DM-Presentation/
 
 ## DATA EXPLORATION:
 This section contains the preliminary operations we performed on the dataset: data visualization, outlier identification, and in general anything that could help us to better understand the dataset and the information it contains.
@@ -119,30 +125,16 @@ paste("Box-Pierce test for subarea 22, product 1, for comparison (this timeserie
 Box.test(filter(dataset_polimi, Sottoarea == "Sottoarea_22", Categoria_prodotto == "Prodotto_1")$Vendite)
 
 ```
----
-runtime: shiny
-output: html_document
----
-### Analyze the time-series!
-
 ```{r echo = FALSE}
   dataset_polimi <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 
 ```
-```{r echo=F, tidy = T, comment = "#", collapse=T}
-selectInput("prodotto", label = "Select a product:",
-              choices = c(1, 2), selected = 1)
-
-sliderInput("sottoarea", label = "Select a subarea:",
-              min = 1, max = length(unique(dataset_polimi$sottoarea)), value = 20, step = 1)
-```
-
 ```{r echo = FALSE, fig.align="center"}
-renderPlot({
-  selected <- filter(dataset_polimi, sottoarea == input$sottoarea, prod == input$prodotto)
 
-  tsdisplay(selected$vendite, main = paste("Time-series, acf and parcor of subarea ", input$sottoarea, ", product ", input$prodotto,  sep=""))
-})
+  selected <- filter(dataset_polimi, sottoarea == 20, prod == "1")
+
+  tsdisplay(selected$vendite, main = "Time-series, acf and parcor of subarea 20, product 1")
+
 ```
 
 
@@ -249,53 +241,23 @@ Then we decided to group subareas according to three different **k-means** runs:
 
 We moved from hierarchical clustering to **k-means** as with the latter we would easily be able to assign new points to existing clusters, through the **clue** package. 
 
----
-runtime: shiny
-output: html_document
----
-
-### Analyze the clusters!
 
 ```{r echo = FALSE}
 dataset_polimi <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 
 ```
 ```{r echo=F, warning=F, tidy = T, comment = "#", collapse=T, fig.align="center"}
-   selectInput("cluster", label = "Select a number of clusters:",
-               choices = c("3 clusters", "6 clusters", "20 clusters"), selected = "6 clusters")
-
-renderPlot({
-    if (input$cluster == "3 clusters")
-      c = 23
-    else if (input$cluster == "6 clusters")
-      c = 24
-    else
-      c = 25
-    
+  
     map <- getMap(resolution = "low")
-    plot(map, xlim = c(5, 20), ylim = c(36, 47), asp = 1)
-    print(input$cluster)
-    for (i in unique(dataset_polimi[, c])) {
-      if (c == 23) {
-        for (s in unique(filter(dataset_polimi, cluster3==i)$sottoarea)){
-              temp <- filter(dataset_polimi, sottoarea==s)
-              points(temp$longitudine[1], temp$latitudine[1], col=i, asp=1)
-        }
-      }
-      else if (c == 24) {
+    plot(map, xlim = c(5, 20), ylim = c(36, 47), asp = 1, main = "6 Clusters")
+    for (i in unique(dataset_polimi[, "cluster6"])) {
+      
         for (s in unique(filter(dataset_polimi, cluster6==i)$sottoarea)){
               temp <- filter(dataset_polimi, sottoarea==s)
               points(temp$longitudine[1], temp$latitudine[1], col=i, asp=1)
         }
-      }
-      else {
-        for (s in unique(filter(dataset_polimi, cluster20==i)$sottoarea)){
-              temp <- filter(dataset_polimi, sottoarea==s)
-              points(temp$longitudine[1], temp$latitudine[1], col=i, asp=1)
-        }
-      }
     }
-})
+
     
 ```
 
@@ -395,7 +357,7 @@ plot <- ggplot(rfs_importance_df, aes(x = reorder(name, rfs_importance),
        geom_bar(stat='identity', fill = "#ff3333", alpha = 0.7) +
        labs(x = 'Variables', title = 'Relative Variable Importance') +
        coord_flip() +
-       theme_few() + ggtitle("Importance plot for a small portion of the dataset")
+       theme_minimal() + ggtitle("Importance plot for a small portion of the dataset")
 print(plot)
 ``` 
 
@@ -472,19 +434,13 @@ Note that the weighting was done without using the predictions for the outlier s
 
 The results below list the performances of the various models, with **MSE**, **MAPE**, **MAXAPE** being computed on a 10-days length test set, and *Out of bag*, *Logloss* being computed by the Random forest training and the Xgboost cross-validation, respectively. In all cases, we also considered the subareas for which we manually predicted 0 sales.
 
-| **MODEL** | **MSE** | **MAPE** | **MAXAPE** | **OTHER** |
-|:------:|:------:|:------:|:------:|:------:|
-| **Sarima** | 2.146694  | 0.2788613 | 3.521273 | - | 
-| **Random Forest** | 2.148978 | 0.2865883 | 4.247568 | *Out of bag:* 1.771598 | 
-| **XGBoost** |  1.964951 |  0.2705864 | 4.012398 | *Logloss:* -29.58445 | 
-| **Ensemble** | 1.876493 | 0.2614705 | 3.876331 | - |
+  | **MODEL** | **MSE** | **MAPE** | **MAXAPE** | **OTHER** |
+  |:------:|:------:|:------:|:------:|:------:|
+  | **Sarima** | 2.146694  | 0.2788613 | 3.521273 | - | 
+  | **Random Forest** | 2.148978 | 0.2865883 | 4.247568 | *Out of bag:* 1.771598 | 
+  | **XGBoost** |  1.964951 |  0.2705864 | 4.012398 | *Logloss:* -29.58445 | 
+  | **Ensemble** | 1.876493 | 0.2614705 | 3.876331 | - |
 
-
----
-runtime: shiny
-output: html_document
----
-### Analyze the predictions!
 
 ```{r echo = FALSE}
 dataset <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
@@ -514,53 +470,33 @@ pred_ensemble <- pred_ensemble[order(pred_ensemble$prod, pred_ensemble$sottoarea
 dataset_polimi <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 
 ```
-```{r echo=F, tidy = T, comment = "#", collapse=T}
-
-
-      selectInput("sel_prod", label = "Select a product:",
-              choices = c(1, 2), selected = 1)
-
-      sliderInput("sel_subarea", label = "Select a subarea:",
-                    min = 1, max = length(unique(dataset_polimi$sottoarea)), value = 5, step = 1)
-       
-   
-      checkboxInput("sarima", label = "Sarima", value = TRUE)
-      checkboxInput("forest", label = "Random Forest", value = TRUE)
-      checkboxInput("xgboost", label = "XGBoost", value = TRUE)
-      checkboxInput("ensemble", label = "Ensemble", value = TRUE)
-    
-```
 ```{r echo=F, tidy = T, comment = "#", collapse=F}
-      renderPlot({
-
-  train <- filter(train, prod == input$sel_prod, sottoarea == input$sel_subarea)
-  test <- filter(test, prod == input$sel_prod, sottoarea == input$sel_subarea)
-  pred_forest <- filter(pred_forest, prod == input$sel_prod, sottoarea == input$sel_subarea)
-  pred_sarima <- filter(pred_sarima, prod == input$sel_prod, sottoarea == input$sel_subarea)
-  pred_xgboost <- filter(pred_xgboost, prod == input$sel_prod, sottoarea == input$sel_subarea)
-  pred_ensemble <- filter(pred_ensemble, prod == input$sel_prod, sottoarea == input$sel_subarea)
+  train <- filter(train, prod == 1, sottoarea == 5)
+  test <- filter(test, prod == 1, sottoarea == 5)
+  pred_forest <- filter(pred_forest, prod == 1, sottoarea == 5)
+  pred_sarima <- filter(pred_sarima, prod == 1, sottoarea == 5)
+  pred_xgboost <- filter(pred_xgboost, prod == 1, sottoarea == 5)
+  pred_ensemble <- filter(pred_ensemble, prod == 1, sottoarea == 5)
 
   cols <- c("train" = "#000000", "test"="#604020","xgboost"="#e65c00","forest"="#009933", "sarima" = "#e6005c", "ensemble" = "#0059b3")
 
-  p <- ggplot(train, aes(x = data, y = vendite, col = "train")) + geom_line(size = 1.2, alpha = 0.8) + geom_point(size=4) + geom_line(data=test, aes(x=data, y = vendite, col = "test"),size = 1.2, alpha = 0.8) + geom_point(data=test, aes(x=data, y = vendite, col = "test"),size = 3) + ggtitle("Predictions on the test set, over 10 days") + theme_minimal() + xlab("Data") + ylab("Numero di vendite")
+  p <- ggplot(train, aes(x = data, y = vendite, col = "train")) + geom_line(size = 1.2, alpha = 0.8) + geom_point(size=4) + geom_line(data=test, aes(x=data, y = vendite, col = "test"),size = 1.2, alpha = 0.8) + geom_point(data=test, aes(x=data, y = vendite, col = "test"),size = 3) + ggtitle("Predictions on the test set for subarea 5, product 1 - 10 days") + theme_minimal() + xlab("Data") + ylab("Numero di vendite")
 
-  if (input$sarima) {
+  
     p <- p + geom_line(data=pred_sarima, aes(x=data, y = vendite, col = "sarima"),size = 1.2, alpha = 0.8) + geom_point(size = 4,data=pred_sarima, aes(x=data, y = vendite, col = "sarima"))
-  }
-  if (input$xgboost) {
+
+
     p <- p + geom_line(data=pred_xgboost, aes(x=data, y = vendite, col = "xgboost"),size = 1.2, alpha = 0.8) + geom_point(size = 4,data=pred_xgboost, aes(x=data, y = vendite, col = "xgboost"))
-  }
-  if (input$forest) {
+
+
     p <- p + geom_line(data=pred_forest, aes(x=data, y = vendite, col = "forest"),size = 1.2, alpha = 0.8) + geom_point(size = 4,data=pred_forest, aes(x=data, y = vendite, col = "forest"))
-  }
-  if (input$ensemble) {
+ 
+ 
     p <- p + geom_line(data=pred_ensemble, aes(x=data, y = vendite, col = "ensemble"),size = 1.2, alpha = 0.8) + geom_point(size = 4,data=pred_ensemble, aes(x=data, y = vendite, col = "ensemble"))
-  }
 
   p <- p + scale_colour_manual(name="Time series",values=cols)
 
   print(p)
-}, height = "auto")
 
 
 

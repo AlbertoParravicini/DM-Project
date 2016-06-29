@@ -60,7 +60,7 @@ these events seems to be purely random and not correlated to any subsequent beha
 
 ```{r echo=F, tidy = T, comment = "#", collapse=F, warning=F, fig.align="center"}
 
-dataset <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
+dataset <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 dataset <- dataset[ , !(names(dataset) %in% c("X"))]
 
 # Convert dates to class "Data"
@@ -115,10 +115,10 @@ ggplot(zona_dataset, aes(x = zona, y = vendite, fill = prod)) +
 
 ## Outlier identification, missing values
 + Unusual sales behaviour:
-    + Almost no sales in subarea **20**, subareas **32** and **78** (relatively to product 2).
-    + Do these time series have a predictable internal structure?
-    **Box-Pierce** test of independence: 
-    + *Null hypothesis*: the signal is made of independent observations.
+    + Almost no sales in subarea **20**, subareas **32** and **78** (relatively to product 2)
+    + Do these time series have a predictable structure? Outlier detection on autocorrelation functions
+    + **Box-Pierce** test of independence: 
+    + *Null hypothesis*: the signal is made of independent observations
     
     
     `data:  subarea_20_p1$Vendite`  
@@ -147,7 +147,7 @@ output: html_document
 ***
 
 ```{r echo = FALSE}
-dataset_polimi <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
+dataset_polimi <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 
 ```
 ```{r echo=F, tidy = T, comment = "#", collapse=T}
@@ -162,7 +162,7 @@ sliderInput("sottoarea", label = "Select a subarea:",
 renderPlot({
   selected <- filter(dataset_polimi, sottoarea == input$sottoarea, prod == input$prodotto)
 
-  tsdisplay(selected$vendite)
+  tsdisplay(selected$vendite, main = paste("Time-series, acf and parcor of subarea ", input$sottoarea, ", product ", input$prodotto,  sep=""))
 })
 ```
 
@@ -171,21 +171,21 @@ renderPlot({
     
 ## Data preparation
 
-  + **Basic feature engineering**:
++ **Basic feature engineering**:
     + Day of the week, month, year
     + Month, week of the year, year
     + Weekend
     + Holiday
     + First of the month
-  + **Other feature engineering**: cumulative sales, etc...
-  + **Coordinates clustering**
++ **Other feature engineering**: cumulative sales, etc...
++ **Coordinates clustering**
 
 ## Other feature engineering (1/2)
-  + We kept track of cumulative sales over certain periods:
++ We kept track of cumulative sales over certain periods:
     + **Cumulative sums by product and subarea**, over each week, month and year
     + **Aggregate sales of the entire company**, day by day, by product and cumulative
     
-  + We used a **Sarima** model to predict the future values of these time-series
++ We used a **Sarima** model to predict the future values of these time-series
   
 <!-- 
 The idea is that using a Sarima model built specifically for a certain time-series (e.g. the aggregate sales) can lead to a highly accurate prediction that can be beneficial to the other models. The cumulative sales didn't prove to be very useful, but the predicion of the aggregate sales improved sightly our results.
@@ -217,7 +217,7 @@ output: html_document
 ## Analyze the clusters!
 
 ```{r echo = FALSE}
-dataset_polimi <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
+dataset_polimi <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 
 ```
 ```{r echo=F, warning=F, tidy = T, comment = "#", collapse=T, fig.align="center"}
@@ -293,7 +293,7 @@ renderPlot({
 ## Seasonal ARIMA (2/4)
 ```{r echo=F, tidy = T, comment = "#", collapse=T, fig.align="center"}
 
-dataset <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE, row.names=NULL)
+dataset <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE, row.names=NULL)
 dataset <- dataset[ , !(names(dataset) %in% c("X"))]
 if (class(dataset$vendite) == "factor") {
   dataset$vendite <- as.numeric(levels(dataset$vendite))[dataset$vendite]
@@ -312,7 +312,7 @@ filtered_data <- filter(dataset, prod == 1, sottoarea == 1)
 train_length <- length(unique(train$data))
 ts_full <- zoo(filtered_data$vendite, order.by = filtered_data$data)
 
-tsdisplay(ts_full)
+tsdisplay(ts_full, main = "Time-series, acf and parcor of subarea 1, product 1")
 ```
 
 
@@ -369,7 +369,7 @@ rfs_importance <- importance(rfs_model)
 rfs_importance_df <- data.frame(name = names(rfs_importance), rfs_importance)
 plot <- ggplot(rfs_importance_df, aes(x = reorder(name, rfs_importance),
                                y = rfs_importance)) +
-       geom_bar(stat='identity', colour = 'black') +
+       geom_bar(stat='identity', fill = "#ff3333", alpha = 0.7) +
        labs(x = 'Variables', title = 'Relative Variable Importance') +
        coord_flip() +
        theme_few() + ggtitle("Importance plot for a small portion of the dataset")
@@ -377,35 +377,35 @@ print(plot)
 ```
 
 ## Random Forest (2/3)
-+ We tried two approaches:
-  + Single model that uses the whole dataset
-  + Set of models, one for each subarea/product combination
-+ At first second approach seemed to yield better results
-+ Parameter tuning on the first approach proved it to be superior
-+ Single model required a higher number of trees than each of the *multiple model* forests
-+ **Out of bag** error was the main metric used to compare the different random forests model
-+ We also employed *mean square error*, *MAPE* and *MAX APE*, computed on a test set.
+* We tried two approaches:
+    + Single model that uses the whole dataset
+    + Set of models, one for each subarea/product combination
+* At first second approach seemed to yield better results
+* Parameter tuning on the first approach proved it to be superior
+* Single model required a higher number of trees than each of the *multiple model* forests
+* **Out of bag** error was the main metric used to compare the different random forests model
+* We also employed *mean square error*, *MAPE* and *MAX APE*, computed on a test set.
 
 ## Random Forest (3/3)
-+ We used **ranger** package for R
-  + Much faster than **randomForest**
-  + Built-in multi-threading
-+ Final model used 1200 trees
-  + Using more trees didn't reduce by a significant amount the *out of bag* error and the *MSE* on the test set, and proved to be computationally prohibitive
+* We used **ranger** package for R
+    + Much faster than **randomForest**
+    + Built-in multi-threading
+* Final model used 1200 trees
+    + Using more trees didn't reduce by a significant amount the *out of bag* error and the *MSE* on the test set, and proved to be computationally prohibitive
   
 ```{r eval=F}
     rfs_model <- ranger(train_set, formula=vendite ~ (zona + area + sottoarea  + prod + giorno_mese + giorno_anno + settimana_anno + mese + anno + stagione + primo_del_mese + cluster3 + cluster6 + cluster20 + latitudine + longitudine + giorno_settimana + weekend + vacanza), num.trees = 1200, write.forest = T, verbose = T, num.threads = 4, ...)
 ```                    
 ## XGBoost (1/3)
-+ **eXtreme Gradient Boosting**: classification and regression algorithm based on gradient boosted trees
-+ Characteristics:
-  + Efficiency
-  + Accuracy
-  + Feasibility
+* **eXtreme Gradient Boosting**: classification and regression algorithm based on gradient boosted trees
+* Characteristics:
+    + Efficiency
+    + Accuracy
+    + Lots of parameters to play with!
 
 
 ## XGBoost (2/3)
-+ Same approach as with Random Forest:
++ Same approach of Random Forest:
     + Single model that uses the whole dataset
     + Set of models, one for each subarea/product combination
 + Used XGBoost's crossvalidation function to get insights of the quality of the models
@@ -425,7 +425,7 @@ print(plot)
 -->
 
 ## XGBoost (3/3)
-+ Used XGBoost's watchlist and evalutaion metric to compare training and test error
++ Used XGBoost's watchlist and evaluation metric to compare training and test error
 + Performed early stopping of training to prevent overfitting of the training data
 ```{r eval=F, highlight=T}
     xgb_model <- xgb.train(data=xg_train, nrounds = 900,
@@ -442,14 +442,13 @@ print(plot)
 ## Results and Ensemble (1/4)
 + **XGBoost** proved to be the most powerful model
 + We looked at **mean square error** over the various product/subareas combination
-  + In some occasions *Sarima* and *Random Forest* would provide better predictions
+    + In some occasions *Sarima* and *Random Forest* would provide better predictions
 + We decided to take this into account and build an ensemble model
-  + Uses predictions of the three models
-  + Predictions weighted according to the estimated *mean square error* of each product/subarea combination in the test set
+    + Uses predictions of the three models
+    + Predictions weighted according to the estimated *mean square error* of each product/subarea combination in the test set
 
-$$prediction = prediction_{xgboost} \cdot w_{xgboost} +$$
-              $$prediction_{forest} \cdot w_{forest} +$$
-              $$prediction_{sarima} \cdot w_{sarima}$$
+$$pred = pred_{xgboost} \cdot w_{xgboost} + pred_{forest} \cdot w_{forest} + $$
+  $$+ pred_{sarima} \cdot w_{sarima}$$
 
 ## Results and Ensemble (2/4)
 
@@ -463,9 +462,9 @@ $$w_{sarima} = \frac{mse_{sarima}^{-1}}{mse_{xgboost}^{-1} + mse_{forest}^{-1} +
 
 + Weighting done without using the prediction for the outlier subareas
 + Performances of the models:
-  + **MSE**, **MAPE**, **MAXAPE** being computed on a 10-days length test set
-  + *Out of bag*, *Logloss* being computed by the Random forest training and the Xgboost cross-validation, respectively
-  + We also considered the subareas for which we manually predicted 0 sales
+    + **MSE**, **MAPE**, **MAXAPE** being computed on a 10-days length test set
+    + *Out of bag*, *Logloss* being computed by the Random forest training and the Xgboost cross-validation, respectively
+    + We also considered the subareas for which we manually predicted 0 sales
 
 ## Results and Ensemble (4/4)
 
@@ -483,17 +482,17 @@ output: html_document
 ***
 
 ```{r echo = FALSE}
-dataset <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
+dataset <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 prediction_length <- 10
 dataset$data <- as.Date(dataset$data)
 train <- filter(dataset, data <= max(data) - prediction_length)
 train <- filter(train, data > max(data) - prediction_length)
 test <- filter(dataset, data > max(data) - prediction_length)
 
-pred_xgboost <- read.csv("../Results/predizione_xgboost_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
-pred_forest <- read.csv("../Results/predizione_random_forest_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
-pred_sarima <- read.csv("../Results/predizione_sarima_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
-pred_ensemble <- read.csv("../Results/PREDIZIONE_CON_PESI_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
+pred_xgboost <- read.csv("dm-report-documents/predizione_xgboost_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
+pred_forest <- read.csv("dm-report-documents/predizione_random_forest_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
+pred_sarima <- read.csv("dm-report-documents/predizione_sarima_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
+pred_ensemble <- read.csv("dm-report-documents/PREDIZIONE_CON_PESI_TEST.csv", row.names=NULL, stringsAsFactors=FALSE)
 
 pred_xgboost$data <- as.Date(pred_xgboost$data)
 pred_forest$data <- as.Date(pred_forest$data)
@@ -507,7 +506,7 @@ pred_ensemble <- pred_ensemble[order(pred_ensemble$prod, pred_ensemble$sottoarea
 ```
 
 ```{r echo = FALSE}
-dataset_polimi <- read.csv("../Modified data/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
+dataset_polimi <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 
 ```
 ```{r echo=F, tidy = T, comment = "#", collapse=T}

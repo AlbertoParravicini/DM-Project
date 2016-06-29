@@ -232,17 +232,17 @@ compute_errors_2 <- function(prediction, test) {
   }
   return(results)
 }
-
+test <- predset
 max(abs(test$vendite_reali - test$vendite_sarima))/mean(test$vendite_reali)
 max(abs(test$vendite_reali - test$vendite_random_forest))/mean(test$vendite_reali)
 max(abs(test$vendite_reali - test$vendite_xgboost))/mean(test$vendite_reali)
 max(abs(test$vendite_reali - test$vendite))/mean(test$vendite_reali)
 
 
-mse_sarima <- mean((test$vendite_reali - test$vendite_sarima)^2)
-mse_forest <- mean((test$vendite_reali - test$vendite_random_forest)^2)
-mse_xgboost <- mean((test$vendite_reali - test$vendite_xgboost)^2)
-mse_final <- mean((test$vendite_reali - test$vendite)^2)
+mean((test$vendite_reali - test$vendite_sarima)^2)
+mean((test$vendite_reali - test$vendite_random_forest)^2)
+mean((test$vendite_reali - test$vendite_xgboost)^2)
+mean((test$vendite_reali - test$vendite)^2)
 
 mean(abs(test$vendite_reali - test$vendite_sarima))/mean(test$vendite_reali)
 mean(abs(test$vendite_reali - test$vendite_random_forest))/mean(test$vendite_reali)
