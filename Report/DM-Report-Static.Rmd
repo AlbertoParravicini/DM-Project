@@ -1,5 +1,5 @@
 ---
-title: "DM-Report"
+title: "Data-Mining Project: BIP"
 author: "Alberto Parravicini, Simone Ripamonti, Luca Stornaiuolo"
 date: "22 giugno 2016"
 output:
@@ -30,6 +30,10 @@ library(GMD)
 library(rworldmap)
 library(nortestARMA)
 ```
+#### Interactive Shiny report at: https://albertoparravicini.shinyapps.io/DM-Report/
+#### Repository at: https://github.com/ripa1993/DM-Project
+#### Forecasts over 10 days: https://github.com/ripa1993/DM-Project/blob/master/Results/PREDIZIONE_FINALE_FUTURE.csv
+#### Presentation at: https://albertoparravicini.shinyapps.io/DM-Presentation/
 
 ## DATA EXPLORATION:
 This section contains the preliminary operations we performed on the dataset: data visualization, outlier identification, and in general anything that could help us to better understand the dataset and the information it contains.
@@ -350,10 +354,10 @@ rfs_importance <- importance(rfs_model)
 rfs_importance_df <- data.frame(name = names(rfs_importance), rfs_importance)
 plot <- ggplot(rfs_importance_df, aes(x = reorder(name, rfs_importance),
                                y = rfs_importance)) +
-       geom_bar(stat='identity', colour = 'black') +
+       geom_bar(stat='identity', fill = "#ff3333", alpha = 0.7) +
        labs(x = 'Variables', title = 'Relative Variable Importance') +
        coord_flip() +
-       theme_few() + ggtitle("Importance plot for a small portion of the dataset")
+       theme_minimal() + ggtitle("Importance plot for a small portion of the dataset")
 print(plot)
 ``` 
 

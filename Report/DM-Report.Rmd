@@ -1,5 +1,5 @@
 ---
-title: "DM-Report"
+title: "Data-Mining Project: BIP"
 author: "Alberto Parravicini, Simone Ripamonti, Luca Stornaiuolo"
 date: "22 giugno 2016"
 output:
@@ -141,7 +141,7 @@ sliderInput("sottoarea", label = "Select a subarea:",
 renderPlot({
   selected <- filter(dataset_polimi, sottoarea == input$sottoarea, prod == input$prodotto)
 
-  tsdisplay(selected$vendite, main = "Analysis of the selected time-series")
+  tsdisplay(selected$vendite, main = paste("Time-series, acf and parcor of subarea ", input$sottoarea, ", product ", input$prodotto,  sep=""))
 })
 ```
 
@@ -192,7 +192,7 @@ As we were provided the GPS coordinates of each subarea, we plotted their latitu
   dataset_polimi <- read.csv("dm-report-documents/dataset_polimi_final_with_holidays_v2.csv", stringsAsFactors=FALSE)
 
     map <- getMap(resolution = "low")
-    plot(map, xlim = c(5, 20), ylim = c(36, 47), asp = 1)
+    plot(map, xlim = c(5, 20), ylim = c(36, 47), asp = 1, main = "Original division by zone")
     for (i in unique(dataset_polimi$zona)){
       for (s in unique(filter(dataset_polimi, zona==i)$sottoarea)){
             temp <- filter(dataset_polimi, sottoarea==s)
@@ -335,7 +335,7 @@ filtered_data <- filter(dataset, prod == 1, sottoarea == 1)
 train_length <- length(unique(train$data))
 ts_full <- zoo(filtered_data$vendite, order.by = filtered_data$data)
 
-tsdisplay(ts_full)
+tsdisplay(ts_full, main = "Time−series, acf and parcor of subarea 1, product 1")
 
 ts_train <- ts_full[1:train_length]
 ts_test <- ts_full[(train_length+1):(prediction_length+train_length)]
@@ -392,7 +392,7 @@ rfs_importance <- importance(rfs_model)
 rfs_importance_df <- data.frame(name = names(rfs_importance), rfs_importance)
 plot <- ggplot(rfs_importance_df, aes(x = reorder(name, rfs_importance),
                                y = rfs_importance)) +
-       geom_bar(stat='identity', colour = 'black') +
+       geom_bar(stat='identity', fill = "#ff3333", alpha = 0.7) +
        labs(x = 'Variables', title = 'Relative Variable Importance') +
        coord_flip() +
        theme_few() + ggtitle("Importance plot for a small portion of the dataset")
