@@ -475,6 +475,19 @@ $$w_{sarima} = \frac{mse_{sarima}^{-1}}{mse_{xgboost}^{-1} + mse_{forest}^{-1} +
 | **XGBoost** |  1.964951 |  0.2705864 | 4.012398 | *Logloss:* -29.58445 | 
 | **Ensemble** | 1.876493 | 0.2614705 | 3.876331 | - |
 
+## Last minute update
++ Using the softmax function instead of a weighted average gives better results!
++ Our predictions still use the weighted average, for fairplay
+
+$$w_{model_i} = \frac{e^{-mse_{model_i}}}{e^{-mse_{xgboost}} + e^{-mse_{forest}} + e^{-mse_{sarima}}}$$
+
+
+| **MODEL** | **MSE** | **MAPE** | **MAXAPE** |
+|:------:|:------:|:------:|:------:|
+| **Ensemble w.a.** | 1.876493 | 0.2614705 | 3.876331 |
+| **Ensemble softmax** | 1.786998 | 0.2595442 | 3.521345 |
+
+
 ---
 runtime: shiny
 output: html_document

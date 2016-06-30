@@ -92,15 +92,27 @@ for(i in 1:nrow(predset)) {
   numerator <- 0
   denominator <- 0
   
+  # Use a softmax normalization
   for(j in seq(1:length(models))) {
-    
+
     curr_weight <- predset[i,][paste(used_error, "_", models[j], sep = "")]
     curr_pred <- predset[i,][paste("vendite_", models[j], sep = "")]
-    
-    numerator <- numerator + ((1/curr_weight) * curr_pred)
-    denominator <- denominator + (1/curr_weight)
-    
+
+    numerator <- numerator + ((exp(-curr_weight)) * curr_pred)
+    denominator <- denominator + (exp(-curr_weight))
+
   }
+  
+  # Use a weighted average
+  # for(j in seq(1:length(models))) {
+  #   
+  #   curr_weight <- predset[i,][paste(used_error, "_", models[j], sep = "")]
+  #   curr_pred <- predset[i,][paste("vendite_", models[j], sep = "")]
+  #   
+  #   numerator <- numerator + 1/curr_weight * curr_pred
+  #   denominator <- denominator + (1/curr_weight)
+  #   
+  # }
   
   predset[i,]["vendite"] <- (numerator/denominator)
     
