@@ -69,14 +69,18 @@ data preparation.R **->** data preparation pt1.5.R **->** data preparation pt2.R
 * plot sales for each day of the month
 
 #### ensemble.R
-* join together predictions from random forest, sarima and xgboost
-* assign zero prediction to selected subareas+products
-* compute errors
+* (outdated, use "join_results.R")
 
 #### forest.r
 * single random forest model
 * multiple random forest model
 * error evaluation
+* 
+
+#### join_results.R
+* join together predictions from random forest, sarima and xgboost
+* assign zero prediction to selected subareas+products
+* compute errors
 
 #### missing_values_and_outliers_predictions.R
 * use random forest to predict values for missing values and outliers
