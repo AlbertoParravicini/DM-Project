@@ -11,7 +11,12 @@ library(zoo) # For time series
 
 # PARAMS
 models <- c("random_forest", "sarima", "xgboost")
+
+# Use "TEST" if working on a test set for which real data area available,
+# "FUTURE" if working on real forecasting and real sales data aren't available
 version <- "TEST"
+
+# Build an ensemble based on sse, or mape, or maxape
 used_error <- 'sse'
 
 # Import predset
@@ -53,6 +58,7 @@ for(i in seq(1:length(models))){
   
   aree_brutte[paste("vendite_", models[i], sep = "")] <- 0
   aree_brutte[paste(used_error, "_", models[i], sep = "")] <- 0
+
   
   # Import data
   curr_pred <- read.csv(paste("Results/predizione_", models[i], "_", version, ".csv", sep = ""), stringsAsFactors=FALSE, row.names=NULL)
@@ -85,6 +91,14 @@ for(i in seq(1:length(models))){
 
 # Create column vendite
 predset$vendite <- 0
+
+for(i in seq(1:length(models))){
+  
+  predset[predset$sottoarea %in% aree_brutte$sottoarea, paste("vendite_", models[i], sep = "")] <- 0
+  predset[predset$sottoarea %in% aree_brutte$sottoarea, paste(used_error, "_", models[i], sep = "")] <- 0
+
+}
+View(predset)
 
 # Media pesata delle predizioni
 for(i in 1:nrow(predset)) {
@@ -140,5 +154,24 @@ risultati$Area <- paste('Area_', risultati$Area, sep = "")
 risultati$Sottoarea <- paste('Sottoarea_', risultati$Sottoarea, sep = "")
 risultati$Categoria_prodotto <- paste('Prodotto_', risultati$Categoria_prodotto, sep = "")
 
-#write.csv(predset, file=paste("Results/PREDIZIONE_CON_PESI_", version, ".csv", sep = ""), row.names = F)
-#write.csv(risultati, file=paste("Results/PREDIZIONE_FINALE_", version, ".csv", sep = ""), row.names = F)
+# Evaluate scores, if real values of sales are available
+test <- predset
+test <- filter(test, !is.na(vendite), !is.nan(vendite))
+max(abs(test$vendite_reali - test$vendite_sarima))/mean(test$vendite_reali)
+max(abs(test$vendite_reali - test$vendite_random_forest))/mean(test$vendite_reali)
+max(abs(test$vendite_reali - test$vendite_xgboost))/mean(test$vendite_reali)
+max(abs(test$vendite_reali - test$vendite))/mean(test$vendite_reali)
+
+
+mean((test$vendite_reali - test$vendite_sarima)^2)
+mean((test$vendite_reali - test$vendite_random_forest)^2)
+mean((test$vendite_reali - test$vendite_xgboost)^2)
+mean((test$vendite_reali - test$vendite)^2)
+
+mean(abs(test$vendite_reali - test$vendite_sarima))/mean(test$vendite_reali)
+mean(abs(test$vendite_reali - test$vendite_random_forest))/mean(test$vendite_reali)
+mean(abs(test$vendite_reali - test$vendite_xgboost))/mean(test$vendite_reali)
+mean(abs(test$vendite_reali - test$vendite))/mean(test$vendite_reali)
+
+write.csv(predset, file=paste("Results/PREDIZIONE_CON_PESI_SOFTMAX_", version, ".csv", sep = ""), row.names = F)
+write.csv(risultati, file=paste("Results/PREDIZIONE_FINALE_SOFTMAX_", version, ".csv", sep = ""), row.names = F)
