@@ -8,6 +8,9 @@
 ## Report
 * [LINK](https://albertoparravicini.shinyapps.io/DM-Report/)
 
+## Results
+* Results/PREDIZIONE_FINALE_FUTURE.csv
+* Results/PREDIZIONE_FINALE_SOFTMAX_FUTURE.csv (Better results than the previous one, with softmax weighting)
 
 ## Data preparation flow:
 * load xgboost_temp.R, sarima_v2.R, forest.R
