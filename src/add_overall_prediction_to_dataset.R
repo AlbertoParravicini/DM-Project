@@ -50,5 +50,5 @@ total_table <- merge(dataset, vendite_giornaliere_prod, by = c("prod", "data"), 
 names(total_table)[names(total_table) == 'vendite_giorn_prod.y'] <- 'vendite_giorn_prod'
 View(total_table)
 
-write.csv(total_table, file="Modified data/dataset_polimi_cluster_tot_pred.csv", row.names = FALSE)
+write.csv(total_table, file="Modified data/dataset_polimi_clusterized_tot_pred.csv", row.names = FALSE)
 
