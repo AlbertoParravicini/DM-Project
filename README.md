@@ -79,6 +79,7 @@ data preparation.R **->** data preparation pt1.5.R **->** data preparation pt2.R
 
 #### join_results.R
 * join together predictions from random forest, sarima and xgboost
+* predictions can come from a test-set for which real data area available, or from real forecasting.
 * assign zero prediction to selected subareas+products
 * compute errors
 
